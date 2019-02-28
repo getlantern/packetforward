@@ -5,14 +5,14 @@ import (
 	"time"
 
 	"github.com/getlantern/framed"
-	"github.com/getlantern/gotun"
+	"github.com/getlantern/ipproxy"
 )
 
 const (
 	maxListenDelay = 1 * time.Second
 )
 
-func Serve(l net.Listener, opts *tun.BridgeOpts) error {
+func Serve(l net.Listener, opts *ipproxy.Opts) error {
 	tempDelay := time.Duration(0)
 	for {
 		conn, err := l.Accept()
@@ -38,9 +38,13 @@ func Serve(l net.Listener, opts *tun.BridgeOpts) error {
 	}
 }
 
-func handle(conn net.Conn, opts *tun.BridgeOpts) {
-	br := tun.NewBridge(framed.NewReadWriteCloser(conn), opts)
-	err := br.Serve()
+func handle(conn net.Conn, opts *ipproxy.Opts) {
+	p, err := ipproxy.New(framed.NewReadWriteCloser(conn), opts)
+	if err != nil {
+		log.Errorf("Unable to open ipproxy: %v", err)
+		return
+	}
+	err = p.Serve()
 	if err != nil {
 		log.Errorf("Error handling packets: %v", err)
 	}

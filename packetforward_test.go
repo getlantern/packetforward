@@ -11,6 +11,7 @@ import (
 	"github.com/armon/go-socks5"
 	"github.com/getlantern/fdcount"
 	"github.com/getlantern/gotun"
+	"github.com/getlantern/ipproxy"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -46,8 +47,9 @@ func TestEndToEnd(t *testing.T) {
 		return
 	}
 	d := &net.Dialer{}
-	go Serve(pfl, &tun.BridgeOpts{
-		IdleTimeout: idleTimeout,
+	go Serve(pfl, &ipproxy.Opts{
+		IdleTimeout:   idleTimeout,
+		StatsInterval: 250 * time.Millisecond,
 		DialTCP: func(ctx context.Context, network, addr string) (net.Conn, error) {
 			// Send everything to local echo server
 			_, port, _ := net.SplitHostPort(addr)
