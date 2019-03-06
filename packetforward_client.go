@@ -106,7 +106,7 @@ func (f *forwarder) writeToUpstream(b []byte) error {
 			f.upstreamConn, dialErr = f.dialServer(ctx)
 			cancel()
 			if dialErr != nil {
-				log.Errorf("Error dialing SOCKS proxy: %v, will retry", dialErr)
+				log.Errorf("Error dialing upstream: %v, will retry", dialErr)
 				continue
 			}
 
