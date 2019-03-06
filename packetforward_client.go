@@ -21,20 +21,20 @@ type DialFunc func(ctx context.Context) (net.Conn, error)
 
 type forwarder struct {
 	downstream   io.ReadWriteCloser
-	mtu          int
+	mss          int
 	dialServer   DialFunc
 	upstreamConn net.Conn
 	upstream     io.ReadWriteCloser
 	stopErr      atomic.Value
 }
 
-func Client(downstream io.ReadWriteCloser, mtu int, dialServer DialFunc) error {
-	f := &forwarder{downstream: downstream, mtu: mtu, dialServer: dialServer}
+func Client(downstream io.ReadWriteCloser, mss int, dialServer DialFunc) error {
+	f := &forwarder{downstream: downstream, mss: mss, dialServer: dialServer}
 	return f.copyFromDownstream()
 }
 
 func (f *forwarder) copyFromDownstream() error {
-	b := make([]byte, f.mtu)
+	b := make([]byte, f.mss)
 	for {
 		n, err := f.downstream.Read(b)
 		if err != nil {
@@ -53,7 +53,7 @@ func (f *forwarder) copyFromDownstream() error {
 }
 
 func (f *forwarder) copyToDownstream(upstreamConn net.Conn, upstream io.ReadWriteCloser) {
-	b := make([]byte, f.mtu)
+	b := make([]byte, f.mss)
 	for {
 		// Don't block for too long waiting for data from upstream. If this times
 		// out, we'll just re-dial later

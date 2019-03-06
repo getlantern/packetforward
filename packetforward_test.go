@@ -53,7 +53,7 @@ func TestEndToEnd(t *testing.T) {
 	})
 
 	// Open a TUN device
-	dev, err := tun.OpenTunDevice("tun0", "10.0.0.2", "10.0.0.1", "255.255.255.0")
+	dev, err := tun.OpenTunDevice("tun0", "10.0.0.10", "10.0.0.9", "255.255.255.0")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -62,7 +62,7 @@ func TestEndToEnd(t *testing.T) {
 	}()
 
 	// Forward packets from TUN device
-	go Client(dev, 1500, func(ctx context.Context) (net.Conn, error) {
+	go Client(dev, 1400, func(ctx context.Context) (net.Conn, error) {
 		return d.DialContext(ctx, "tcp", pfl.Addr().String())
 	})
 
@@ -72,7 +72,7 @@ func TestEndToEnd(t *testing.T) {
 
 	// point at TUN device rather than echo server directly
 	_, port, _ := net.SplitHostPort(echoAddr)
-	echoAddr = "10.0.0.1:" + port
+	echoAddr = "10.0.0.9:" + port
 
 	b := make([]byte, 8)
 
