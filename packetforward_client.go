@@ -1,40 +1,35 @@
 package packetforward
 
 import (
-	"github.com/getlantern/errors"
-	"github.com/getlantern/framed"
+	"context"
 	"io"
 	"math"
 	"net"
 	"sync/atomic"
 	"time"
 
-	"golang.org/x/net/proxy"
+	"github.com/getlantern/framed"
 )
 
 const (
 	maxDialDelay = 1 * time.Second
 
-	ioTimeout = 3 * time.Second
+	ioTimeout = 30 * time.Second
 )
 
+type DialFunc func(ctx context.Context) (net.Conn, error)
+
 type forwarder struct {
-	downstream              io.ReadWriteCloser
-	packetForwardServerAddr string
-	mtu                     int
-	dialer                  proxy.Dialer
-	upstreamConn            net.Conn
-	upstream                io.ReadWriteCloser
-	stopErr                 atomic.Value
+	downstream   io.ReadWriteCloser
+	mtu          int
+	dialServer   DialFunc
+	upstreamConn net.Conn
+	upstream     io.ReadWriteCloser
+	stopErr      atomic.Value
 }
 
-func To(socksProxyAddr string, packetForwardServerAddr string, downstream io.ReadWriteCloser, mtu int) error {
-	dialer, err := proxy.SOCKS5("tcp", socksProxyAddr, nil, &net.Dialer{})
-	if err != nil {
-		return errors.New("Unable to create SOCKS5 dialer: %v", err)
-	}
-
-	f := &forwarder{downstream: downstream, packetForwardServerAddr: packetForwardServerAddr, mtu: mtu, dialer: dialer}
+func Client(downstream io.ReadWriteCloser, mtu int, dialServer DialFunc) error {
+	f := &forwarder{downstream: downstream, mtu: mtu, dialServer: dialServer}
 	return f.copyFromDownstream()
 }
 
@@ -63,15 +58,16 @@ func (f *forwarder) copyToDownstream(upstreamConn net.Conn, upstream io.ReadWrit
 		// Don't block for too long waiting for data from upstream. If this times
 		// out, we'll just re-dial later
 		upstreamConn.SetReadDeadline(time.Now().Add(ioTimeout))
-		n, err := upstream.Read(b)
-		if err != nil {
-			upstream.Close()
-			return
+		n, readErr := upstream.Read(b)
+		if n > 0 {
+			_, writeErr := f.downstream.Write(b[:n])
+			if writeErr != nil {
+				f.stopErr.Store(writeErr)
+				upstream.Close()
+				return
+			}
 		}
-
-		_, err = f.downstream.Write(b[:n])
-		if err != nil {
-			f.stopErr.Store(err)
+		if readErr != nil {
 			upstream.Close()
 			return
 		}
@@ -105,8 +101,10 @@ func (f *forwarder) writeToUpstream(b []byte) error {
 				return se
 			}
 
+			ctx, cancel := context.WithTimeout(context.Background(), ioTimeout)
 			var dialErr error
-			f.upstreamConn, dialErr = f.dialer.Dial("tcp", f.packetForwardServerAddr)
+			f.upstreamConn, dialErr = f.dialServer(ctx)
+			cancel()
 			if dialErr != nil {
 				log.Errorf("Error dialing SOCKS proxy: %v, will retry", dialErr)
 				continue

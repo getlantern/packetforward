@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/armon/go-socks5"
 	"github.com/getlantern/fdcount"
 	"github.com/getlantern/gotun"
 	"github.com/getlantern/ipproxy"
@@ -27,19 +26,6 @@ var (
 // TUN device.
 func TestEndToEnd(t *testing.T) {
 	ip := "127.0.0.1"
-
-	// Create a SOCKS5 server
-	conf := &socks5.Config{}
-	server, err := socks5.New(conf)
-	if err != nil {
-		panic(err)
-	}
-
-	spl, err := net.Listen("tcp", "localhost:0")
-	if !assert.NoError(t, err) {
-		return
-	}
-	go server.Serve(spl)
 
 	// Create a packetforward server
 	pfl, err := net.Listen("tcp", "localhost:0")
@@ -76,7 +62,9 @@ func TestEndToEnd(t *testing.T) {
 	}()
 
 	// Forward packets from TUN device
-	go To(spl.Addr().String(), pfl.Addr().String(), dev, 1500)
+	go Client(dev, 1500, func(ctx context.Context) (net.Conn, error) {
+		return d.DialContext(ctx, "tcp", pfl.Addr().String())
+	})
 
 	closeCh := make(chan interface{})
 	echoAddr := tcpEcho(t, closeCh, ip)
