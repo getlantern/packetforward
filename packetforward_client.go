@@ -14,27 +14,27 @@ import (
 const (
 	maxDialDelay = 1 * time.Second
 
-	ioTimeout = 30 * time.Second
+	ioTimeout = 3 * time.Second
 )
 
 type DialFunc func(ctx context.Context) (net.Conn, error)
 
 type forwarder struct {
 	downstream   io.ReadWriteCloser
-	mss          int
+	mtu          int
 	dialServer   DialFunc
 	upstreamConn net.Conn
 	upstream     io.ReadWriteCloser
 	stopErr      atomic.Value
 }
 
-func Client(downstream io.ReadWriteCloser, mss int, dialServer DialFunc) error {
-	f := &forwarder{downstream: downstream, mss: mss, dialServer: dialServer}
+func Client(downstream io.ReadWriteCloser, mtu int, dialServer DialFunc) error {
+	f := &forwarder{downstream: downstream, mtu: mtu, dialServer: dialServer}
 	return f.copyFromDownstream()
 }
 
 func (f *forwarder) copyFromDownstream() error {
-	b := make([]byte, f.mss)
+	b := make([]byte, f.mtu-framed.FrameHeaderLength) // leave room for framed header
 	for {
 		n, err := f.downstream.Read(b)
 		if err != nil {
@@ -53,7 +53,7 @@ func (f *forwarder) copyFromDownstream() error {
 }
 
 func (f *forwarder) copyToDownstream(upstreamConn net.Conn, upstream io.ReadWriteCloser) {
-	b := make([]byte, f.mss)
+	b := make([]byte, f.mtu)
 	for {
 		// Don't block for too long waiting for data from upstream. If this times
 		// out, we'll just re-dial later
@@ -68,6 +68,7 @@ func (f *forwarder) copyToDownstream(upstreamConn net.Conn, upstream io.ReadWrit
 			}
 		}
 		if readErr != nil {
+			log.Errorf("Encountered readErr, closing upstream: %v", readErr)
 			upstream.Close()
 			return
 		}
@@ -92,6 +93,7 @@ func (f *forwarder) writeToUpstream(b []byte) error {
 		attempts++
 
 		if f.upstreamConn == nil {
+			log.Debug("Dialing upstream")
 			_se := f.stopErr.Load()
 			if _se != nil {
 				se := _se.(error)

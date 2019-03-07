@@ -13,6 +13,9 @@ const (
 )
 
 func Serve(l net.Listener, opts *ipproxy.Opts) error {
+	opts = opts.ApplyDefaults()
+	opts.MTU -= framed.FrameHeaderLength // leave room for framed header
+
 	tempDelay := time.Duration(0)
 	for {
 		conn, err := l.Accept()
