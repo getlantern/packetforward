@@ -14,7 +14,7 @@ import (
 const (
 	maxDialDelay = 1 * time.Second
 
-	ioTimeout = 3 * time.Second
+	ioTimeout = 30 * time.Second
 )
 
 type DialFunc func(ctx context.Context) (net.Conn, error)
