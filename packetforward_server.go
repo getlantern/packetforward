@@ -2,6 +2,7 @@ package packetforward
 
 import (
 	"io"
+	"math"
 	"net"
 	"sync"
 	"time"
@@ -13,6 +14,9 @@ import (
 
 const (
 	maxListenDelay = 1 * time.Second
+
+	baseIODelay = 10 * time.Millisecond
+	maxIODelay  = 1 * time.Millisecond
 )
 
 type Server interface {
@@ -128,21 +132,35 @@ func (c *client) attach(framedConn io.ReadWriteCloser) {
 }
 
 func (c *client) Read(b []byte) (int, error) {
+	i := float64(0)
 	for {
 		n, err := c.getFramedConn().Read(b)
 		if err == nil {
 			return n, err
 		}
 		// ignore errors and retry, because clients can reconnect
+		sleepTime := time.Duration(math.Pow(2, i)) * baseIODelay
+		if sleepTime > maxIODelay {
+			sleepTime = maxIODelay
+		}
+		time.Sleep(sleepTime)
+		i++
 	}
 }
 
 func (c *client) Write(b []byte) (int, error) {
+	i := float64(0)
 	for {
 		n, err := c.getFramedConn().Write(b)
 		if err == nil {
 			return n, err
 		}
 		// ignore errors and retry, because clients can reconnect
+		sleepTime := time.Duration(math.Pow(2, i)) * baseIODelay
+		if sleepTime > maxIODelay {
+			sleepTime = maxIODelay
+		}
+		time.Sleep(sleepTime)
+		i++
 	}
 }
