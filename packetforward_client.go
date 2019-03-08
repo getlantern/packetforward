@@ -5,31 +5,32 @@ import (
 	"io"
 	"math"
 	"net"
-	"sync/atomic"
 	"time"
 
 	"github.com/getlantern/framed"
+	"github.com/getlantern/idletiming"
+	"github.com/getlantern/uuid"
 )
 
 const (
 	maxDialDelay = 1 * time.Second
-
-	ioTimeout = 30 * time.Second
 )
 
 type DialFunc func(ctx context.Context) (net.Conn, error)
 
 type forwarder struct {
-	downstream   io.ReadWriteCloser
-	mtu          int
-	dialServer   DialFunc
-	upstreamConn net.Conn
-	upstream     io.ReadWriteCloser
-	stopErr      atomic.Value
+	id                    string
+	downstream            io.ReadWriteCloser
+	mtu                   int
+	idleTimeout           time.Duration
+	dialServer            DialFunc
+	upstreamConn          net.Conn
+	upstream              io.ReadWriteCloser
+	copyToDownstreamError chan error
 }
 
-func Client(downstream io.ReadWriteCloser, mtu int, dialServer DialFunc) error {
-	f := &forwarder{downstream: downstream, mtu: mtu, dialServer: dialServer}
+func Client(downstream io.ReadWriteCloser, mtu int, idleTimeout time.Duration, dialServer DialFunc) error {
+	f := &forwarder{id: uuid.New(), downstream: downstream, mtu: mtu, idleTimeout: idleTimeout, dialServer: dialServer}
 	return f.copyFromDownstream()
 }
 
@@ -55,21 +56,18 @@ func (f *forwarder) copyFromDownstream() error {
 func (f *forwarder) copyToDownstream(upstreamConn net.Conn, upstream io.ReadWriteCloser) {
 	b := make([]byte, f.mtu)
 	for {
-		// Don't block for too long waiting for data from upstream. If this times
-		// out, we'll just re-dial later
-		upstreamConn.SetReadDeadline(time.Now().Add(ioTimeout))
 		n, readErr := upstream.Read(b)
 		if n > 0 {
 			_, writeErr := f.downstream.Write(b[:n])
 			if writeErr != nil {
-				f.stopErr.Store(writeErr)
 				upstream.Close()
+				f.copyToDownstreamError <- writeErr
 				return
 			}
 		}
 		if readErr != nil {
-			log.Errorf("Encountered readErr, closing upstream: %v", readErr)
 			upstream.Close()
+			f.copyToDownstreamError <- readErr
 			return
 		}
 	}
@@ -79,8 +77,9 @@ func (f *forwarder) writeToUpstream(b []byte) error {
 	// Keep trying to transmit the client packet
 	attempts := float64(-100000)
 	sleepTime := 50 * time.Millisecond
-	maxSleepTime := ioTimeout
+	maxSleepTime := f.idleTimeout
 
+	firstDial := true
 	for {
 		if attempts > -1 {
 			sleepTime := time.Duration(math.Pow(2, attempts)) * sleepTime
@@ -94,27 +93,31 @@ func (f *forwarder) writeToUpstream(b []byte) error {
 
 		if f.upstreamConn == nil {
 			log.Debug("Dialing upstream")
-			_se := f.stopErr.Load()
-			if _se != nil {
-				se := _se.(error)
-				if se != io.EOF {
-					se = log.Errorf("Unexpected error reading packet: %v", se)
-				}
-				return se
+			if !firstDial {
+				// wait for copying to downstream to finish
+				<-f.copyToDownstreamError
+			} else {
+				firstDial = false
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), ioTimeout)
-			var dialErr error
-			f.upstreamConn, dialErr = f.dialServer(ctx)
+			ctx, cancel := context.WithTimeout(context.Background(), f.idleTimeout)
+			upstreamConn, dialErr := f.dialServer(ctx)
 			cancel()
 			if dialErr != nil {
-				log.Errorf("Error dialing upstream: %v, will retry", dialErr)
+				log.Errorf("Error dialing upstream, will retry: %v", dialErr)
 				continue
 			}
-
+			f.upstreamConn = idletiming.Conn(upstreamConn, f.idleTimeout, nil)
 			f.upstream = framed.NewReadWriteCloser(f.upstreamConn)
+			if _, err := f.upstream.Write([]byte(f.id)); err != nil {
+				log.Errorf("Error sending client ID to upstream, will retry: %v", err)
+				continue
+			}
+			log.Debugf("Wrote client Id: %v", f.id)
 			go f.copyToDownstream(f.upstreamConn, f.upstream)
 		}
+
+		attempts = -1
 
 		_, writeErr := f.upstream.Write(b)
 		if writeErr != nil {

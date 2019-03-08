@@ -33,7 +33,7 @@ func TestEndToEnd(t *testing.T) {
 		return
 	}
 	d := &net.Dialer{}
-	go Serve(pfl, &ipproxy.Opts{
+	s := NewServer(&ipproxy.Opts{
 		IdleTimeout:   idleTimeout,
 		StatsInterval: 250 * time.Millisecond,
 		DialTCP: func(ctx context.Context, network, addr string) (net.Conn, error) {
@@ -51,6 +51,7 @@ func TestEndToEnd(t *testing.T) {
 			return conn.(*net.UDPConn), nil
 		},
 	})
+	go s.Serve(pfl)
 
 	// Open a TUN device
 	dev, err := tun.OpenTunDevice("tun0", "10.0.0.10", "10.0.0.9", "255.255.255.0")
@@ -62,7 +63,7 @@ func TestEndToEnd(t *testing.T) {
 	}()
 
 	// Forward packets from TUN device
-	go Client(dev, 1400, func(ctx context.Context) (net.Conn, error) {
+	go Client(dev, 1400, 500*time.Millisecond, func(ctx context.Context) (net.Conn, error) {
 		return d.DialContext(ctx, "tcp", pfl.Addr().String())
 	})
 
@@ -93,6 +94,8 @@ func TestEndToEnd(t *testing.T) {
 		return
 	}
 
+	// Sleep long enough to hit idle timeout so that client will have to reconnect
+	time.Sleep(600 * time.Millisecond)
 	uconn.SetDeadline(time.Now().Add(250 * time.Millisecond))
 	_, err = io.ReadFull(uconn, b)
 	if !assert.NoError(t, err) {
@@ -100,6 +103,7 @@ func TestEndToEnd(t *testing.T) {
 	}
 	assert.Equal(t, "helloudp", string(b))
 
+	log.Debug("Here!")
 	conn, err := net.DialTimeout("tcp", echoAddr, 5*time.Second)
 	if !assert.NoError(t, err) {
 		return
@@ -111,6 +115,8 @@ func TestEndToEnd(t *testing.T) {
 		return
 	}
 
+	// Sleep long enough to hit idle timeout so that client will have to reconnect
+	time.Sleep(600 * time.Millisecond)
 	_, err = io.ReadFull(conn, b)
 	if !assert.NoError(t, err) {
 		return
