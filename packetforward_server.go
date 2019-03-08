@@ -16,7 +16,7 @@ const (
 	maxListenDelay = 1 * time.Second
 
 	baseIODelay = 10 * time.Millisecond
-	maxIODelay  = 1 * time.Millisecond
+	maxIODelay  = 1 * time.Second
 )
 
 type Server interface {
