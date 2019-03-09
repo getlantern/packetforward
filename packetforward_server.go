@@ -5,10 +5,11 @@ import (
 	"math"
 	"net"
 	"sync"
+	"sync/atomic"
 	"time"
 
-	"github.com/getlantern/eventual"
 	"github.com/getlantern/framed"
+	"github.com/getlantern/idletiming"
 	"github.com/getlantern/ipproxy"
 )
 
@@ -21,8 +22,6 @@ const (
 
 type Server interface {
 	Serve(l net.Listener) error
-
-	Close() error
 }
 
 type server struct {
@@ -41,12 +40,9 @@ func NewServer(opts *ipproxy.Opts) Server {
 	}
 }
 
-func (s *server) Close() error {
-	// TODO: implement
-	return nil
-}
-
 func (s *server) Serve(l net.Listener) error {
+	defer s.forgetClients()
+
 	tempDelay := time.Duration(0)
 	for {
 		conn, err := l.Accept()
@@ -84,14 +80,14 @@ func (s *server) handle(conn net.Conn) {
 		return
 	}
 	id := string(b)
-	log.Debugf("Read client id: %v", id)
 
 	s.clientsMx.Lock()
 	c := s.clients[id]
 	if c == nil {
-		log.Debug("new client")
 		c = &client{
-			framedConn: eventual.NewValue(),
+			id:         id,
+			s:          s,
+			framedConn: framedConn,
 		}
 
 		ipp, err := ipproxy.New(c, s.opts)
@@ -105,30 +101,47 @@ func (s *server) handle(conn net.Conn) {
 			}
 		}()
 		s.clients[id] = c
+	} else {
+		c.attach(framedConn)
 	}
 	s.clientsMx.Unlock()
+}
 
-	c.attach(framedConn)
+func (s *server) forgetClients() {
+	s.clientsMx.Lock()
+	for id := range s.clients {
+		delete(s.clients, id)
+	}
+	s.clientsMx.Unlock()
+}
+
+func (s *server) forgetClient(id string) {
+	s.clientsMx.Lock()
+	delete(s.clients, id)
+	s.clientsMx.Unlock()
 }
 
 type client struct {
-	framedConn eventual.Value
+	id         string
+	s          *server
+	framedConn io.ReadWriteCloser
+	lastActive int64
+	mx         sync.RWMutex
 }
 
 func (c *client) getFramedConn() io.ReadWriteCloser {
-	framedConn, _ := c.framedConn.Get(eventual.Forever)
-	return framedConn.(io.ReadWriteCloser)
+	c.mx.RLock()
+	framedConn := c.framedConn
+	c.mx.RUnlock()
+	return framedConn
 }
 
 func (c *client) attach(framedConn io.ReadWriteCloser) {
-	log.Debug("Attaching")
-	oldFramedConn, _ := c.framedConn.Get(0)
-	if oldFramedConn != nil {
-		log.Debug("Closing old connection")
-		oldFramedConn.(io.Closer).Close()
+	c.mx.Lock()
+	if c.framedConn != nil {
+		go c.framedConn.Close()
 	}
-	c.framedConn.Set(framedConn)
-	log.Debug("Attached")
+	c.framedConn = framedConn
 }
 
 func (c *client) Read(b []byte) (int, error) {
@@ -136,7 +149,12 @@ func (c *client) Read(b []byte) (int, error) {
 	for {
 		n, err := c.getFramedConn().Read(b)
 		if err == nil {
+			c.markActive()
 			return n, err
+		}
+		if c.idle() {
+			c.s.forgetClient(c.id)
+			return 0, io.EOF
 		}
 		// ignore errors and retry, because clients can reconnect
 		sleepTime := time.Duration(math.Pow(2, i)) * baseIODelay
@@ -153,7 +171,11 @@ func (c *client) Write(b []byte) (int, error) {
 	for {
 		n, err := c.getFramedConn().Write(b)
 		if err == nil {
+			c.markActive()
 			return n, err
+		}
+		if c.idle() {
+			return 0, idletiming.ErrIdled
 		}
 		// ignore errors and retry, because clients can reconnect
 		sleepTime := time.Duration(math.Pow(2, i)) * baseIODelay
@@ -163,4 +185,12 @@ func (c *client) Write(b []byte) (int, error) {
 		time.Sleep(sleepTime)
 		i++
 	}
+}
+
+func (c *client) markActive() {
+	atomic.StoreInt64(&c.lastActive, time.Now().UnixNano())
+}
+
+func (c *client) idle() bool {
+	return time.Duration(time.Now().UnixNano()-atomic.LoadInt64(&c.lastActive)) > c.s.opts.IdleTimeout
 }

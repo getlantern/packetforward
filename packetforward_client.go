@@ -86,13 +86,11 @@ func (f *forwarder) writeToUpstream(b []byte) error {
 			if sleepTime > maxSleepTime {
 				sleepTime = maxSleepTime
 			}
-			log.Debugf("Sleeping %v", sleepTime)
 			time.Sleep(sleepTime)
 		}
 		attempts++
 
 		if f.upstreamConn == nil {
-			log.Debug("Dialing upstream")
 			if !firstDial {
 				// wait for copying to downstream to finish
 				<-f.copyToDownstreamError
@@ -113,7 +111,6 @@ func (f *forwarder) writeToUpstream(b []byte) error {
 				log.Errorf("Error sending client ID to upstream, will retry: %v", err)
 				continue
 			}
-			log.Debugf("Wrote client Id: %v", f.id)
 			go f.copyToDownstream(f.upstreamConn, f.upstream)
 		}
 
