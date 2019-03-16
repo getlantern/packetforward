@@ -66,9 +66,22 @@ func TestEndToEnd(t *testing.T) {
 	}()
 
 	// Forward packets from TUN device
-	go Client(dev, 1400, clientIdleTimeout, func(ctx context.Context) (net.Conn, error) {
+	writer := Client(dev, 1400, clientIdleTimeout, func(ctx context.Context) (net.Conn, error) {
 		return d.DialContext(ctx, "tcp", pfl.Addr().String())
 	})
+	go func() {
+		b := make([]byte, 1400)
+		for {
+			n, err := dev.Read(b)
+			if n > 0 {
+				writer.Write(b[:n])
+			}
+			if err != nil {
+				return
+			}
+		}
+	}()
+	defer writer.Close()
 
 	closeCh := make(chan interface{})
 	echoAddr := tcpEcho(t, closeCh, ip)

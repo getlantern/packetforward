@@ -20,7 +20,7 @@ type DialFunc func(ctx context.Context) (net.Conn, error)
 
 type forwarder struct {
 	id                    string
-	downstream            io.ReadWriteCloser
+	downstream            io.Writer
 	mtu                   int
 	idleTimeout           time.Duration
 	dialServer            DialFunc
@@ -29,28 +29,22 @@ type forwarder struct {
 	copyToDownstreamError chan error
 }
 
-func Client(downstream io.ReadWriteCloser, mtu int, idleTimeout time.Duration, dialServer DialFunc) error {
-	f := &forwarder{id: uuid.New(), downstream: downstream, mtu: mtu, idleTimeout: idleTimeout, dialServer: dialServer}
-	return f.copyFromDownstream()
+func Client(downstream io.Writer, mtu int, idleTimeout time.Duration, dialServer DialFunc) io.WriteCloser {
+	id := uuid.New()
+	return &forwarder{id: id, downstream: downstream, mtu: mtu, idleTimeout: idleTimeout, dialServer: dialServer}
 }
 
-func (f *forwarder) copyFromDownstream() error {
-	b := make([]byte, f.mtu-framed.FrameHeaderLength) // leave room for framed header
-	for {
-		n, err := f.downstream.Read(b)
-		if err != nil {
-			if err != io.EOF {
-				err = log.Errorf("Unexpected error reading from downstream: %v", err)
-			}
-			f.closeUpstream()
-			return err
-		}
-
-		err = f.writeToUpstream(b[:n])
-		if err != nil {
-			return err
-		}
+func (f *forwarder) Write(b []byte) (int, error) {
+	writeErr := f.writeToUpstream(b)
+	if writeErr != nil {
+		return 0, writeErr
 	}
+	return len(b), nil
+}
+
+func (f *forwarder) Close() error {
+	f.closeUpstream()
+	return nil
 }
 
 func (f *forwarder) copyToDownstream(upstreamConn net.Conn, upstream io.ReadWriteCloser) {
