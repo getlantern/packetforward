@@ -139,7 +139,6 @@ func (c *client) getFramedConn() io.ReadWriteCloser {
 }
 
 func (c *client) attach(framedConn io.ReadWriteCloser) {
-	c.mx.Lock()
 	if c.framedConn != nil {
 		go c.framedConn.Close()
 	}
