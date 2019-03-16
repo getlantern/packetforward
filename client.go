@@ -31,7 +31,14 @@ type forwarder struct {
 
 func Client(downstream io.Writer, mtu int, idleTimeout time.Duration, dialServer DialFunc) io.WriteCloser {
 	id := uuid.New()
-	return &forwarder{id: id, downstream: downstream, mtu: mtu, idleTimeout: idleTimeout, dialServer: dialServer}
+	return &forwarder{
+		id:                    id,
+		downstream:            downstream,
+		mtu:                   mtu,
+		idleTimeout:           idleTimeout,
+		dialServer:            dialServer,
+		copyToDownstreamError: make(chan error, 1),
+	}
 }
 
 func (f *forwarder) Write(b []byte) (int, error) {
