@@ -111,9 +111,7 @@ func (s *server) handle(conn net.Conn) {
 
 func (s *server) forgetClients() {
 	s.clientsMx.Lock()
-	for id := range s.clients {
-		delete(s.clients, id)
-	}
+	s.clients = make(map[string]*client)
 	s.clientsMx.Unlock()
 }
 
