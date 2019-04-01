@@ -30,7 +30,7 @@ type forwarder struct {
 }
 
 func Client(downstream io.Writer, mtu int, idleTimeout time.Duration, dialServer DialFunc) io.WriteCloser {
-	id := uuid.New()
+	id := uuid.New().String()
 	return &forwarder{
 		id:                    id,
 		downstream:            downstream,
