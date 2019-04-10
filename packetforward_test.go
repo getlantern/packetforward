@@ -8,14 +8,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/armon/go-socks5"
 	"github.com/getlantern/fdcount"
 	"github.com/getlantern/gotun"
+	"github.com/getlantern/ipproxy"
 	"github.com/stretchr/testify/assert"
 )
 
 const (
-	idleTimeout = 1 * time.Second
+	idleTimeout       = 10 * time.Second
+	clientIdleTimeout = 100 * time.Second
 )
 
 var (
@@ -27,27 +28,17 @@ var (
 func TestEndToEnd(t *testing.T) {
 	ip := "127.0.0.1"
 
-	// Create a SOCKS5 server
-	conf := &socks5.Config{}
-	server, err := socks5.New(conf)
-	if err != nil {
-		panic(err)
-	}
-
-	spl, err := net.Listen("tcp", "localhost:0")
-	if !assert.NoError(t, err) {
-		return
-	}
-	go server.Serve(spl)
-
 	// Create a packetforward server
 	pfl, err := net.Listen("tcp", "localhost:0")
 	if !assert.NoError(t, err) {
 		return
 	}
+	defer pfl.Close()
+
 	d := &net.Dialer{}
-	go Serve(pfl, &tun.BridgeOpts{
-		IdleTimeout: idleTimeout,
+	s := NewServer(&ipproxy.Opts{
+		IdleTimeout:   idleTimeout,
+		StatsInterval: 250 * time.Millisecond,
 		DialTCP: func(ctx context.Context, network, addr string) (net.Conn, error) {
 			// Send everything to local echo server
 			_, port, _ := net.SplitHostPort(addr)
@@ -63,9 +54,10 @@ func TestEndToEnd(t *testing.T) {
 			return conn.(*net.UDPConn), nil
 		},
 	})
+	go s.Serve(pfl)
 
 	// Open a TUN device
-	dev, err := tun.OpenTunDevice("tun0", "10.0.0.2", "10.0.0.1", "255.255.255.0")
+	dev, err := tun.OpenTunDevice("tun0", "10.0.0.10", "10.0.0.9", "255.255.255.0")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -74,7 +66,22 @@ func TestEndToEnd(t *testing.T) {
 	}()
 
 	// Forward packets from TUN device
-	go To(spl.Addr().String(), pfl.Addr().String(), dev, 1500)
+	writer := Client(dev, 1400, clientIdleTimeout, func(ctx context.Context) (net.Conn, error) {
+		return d.DialContext(ctx, "tcp", pfl.Addr().String())
+	})
+	go func() {
+		b := make([]byte, 1400)
+		for {
+			n, err := dev.Read(b)
+			if n > 0 {
+				writer.Write(b[:n])
+			}
+			if err != nil {
+				return
+			}
+		}
+	}()
+	defer writer.Close()
 
 	closeCh := make(chan interface{})
 	echoAddr := tcpEcho(t, closeCh, ip)
@@ -82,7 +89,7 @@ func TestEndToEnd(t *testing.T) {
 
 	// point at TUN device rather than echo server directly
 	_, port, _ := net.SplitHostPort(echoAddr)
-	echoAddr = "10.0.0.1:" + port
+	echoAddr = "10.0.0.9:" + port
 
 	b := make([]byte, 8)
 
@@ -103,6 +110,8 @@ func TestEndToEnd(t *testing.T) {
 		return
 	}
 
+	// Sleep long enough to hit idle timeout so that client will have to reconnect
+	// time.Sleep(clientIdleTimeout + 100*time.Millisecond)
 	uconn.SetDeadline(time.Now().Add(250 * time.Millisecond))
 	_, err = io.ReadFull(uconn, b)
 	if !assert.NoError(t, err) {
@@ -110,6 +119,7 @@ func TestEndToEnd(t *testing.T) {
 	}
 	assert.Equal(t, "helloudp", string(b))
 
+	log.Debug("Here!")
 	conn, err := net.DialTimeout("tcp", echoAddr, 5*time.Second)
 	if !assert.NoError(t, err) {
 		return
@@ -121,6 +131,8 @@ func TestEndToEnd(t *testing.T) {
 		return
 	}
 
+	// Sleep long enough to hit idle timeout so that client will have to reconnect
+	// time.Sleep(clientIdleTimeout + 100*time.Second)
 	_, err = io.ReadFull(conn, b)
 	if !assert.NoError(t, err) {
 		return
