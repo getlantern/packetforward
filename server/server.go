@@ -1,4 +1,4 @@
-package packetforward
+package server
 
 import (
 	"io"
@@ -9,9 +9,12 @@ import (
 	"time"
 
 	"github.com/getlantern/framed"
+	"github.com/getlantern/golog"
 	"github.com/getlantern/idletiming"
 	"github.com/getlantern/ipproxy"
 )
+
+var log = golog.LoggerFor("packetforward")
 
 const (
 	maxListenDelay = 1 * time.Second

@@ -8,9 +8,12 @@ import (
 	"time"
 
 	"github.com/getlantern/framed"
+	"github.com/getlantern/golog"
 	"github.com/getlantern/idletiming"
 	"github.com/getlantern/uuid"
 )
+
+var log = golog.LoggerFor("packetforward")
 
 const (
 	maxDialDelay = 1 * time.Second

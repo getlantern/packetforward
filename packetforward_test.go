@@ -11,6 +11,8 @@ import (
 	"github.com/getlantern/fdcount"
 	"github.com/getlantern/gotun"
 	"github.com/getlantern/ipproxy"
+	"github.com/getlantern/packetforward/server"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,7 +38,7 @@ func TestEndToEnd(t *testing.T) {
 	defer pfl.Close()
 
 	d := &net.Dialer{}
-	s := NewServer(&ipproxy.Opts{
+	s := server.NewServer(&ipproxy.Opts{
 		IdleTimeout:   idleTimeout,
 		StatsInterval: 250 * time.Millisecond,
 		DialTCP: func(ctx context.Context, network, addr string) (net.Conn, error) {

@@ -1,4 +1,4 @@
-package packetforward
+package server
 
 import (
 	"time"
