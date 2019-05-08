@@ -4,12 +4,13 @@ import (
 	"context"
 	"io"
 	"net"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/getlantern/fdcount"
-	"github.com/getlantern/gotun"
+	tun "github.com/getlantern/gotun"
 	"github.com/getlantern/ipproxy"
 	"github.com/getlantern/packetforward/server"
 
@@ -61,7 +62,12 @@ func TestEndToEnd(t *testing.T) {
 	// Open a TUN device
 	dev, err := tun.OpenTunDevice("tun0", "10.0.0.10", "10.0.0.9", "255.255.255.0")
 	if err != nil {
-		log.Fatal(err)
+		if err != nil {
+			if strings.HasSuffix(err.Error(), "operation not permitted") {
+				t.Log("This test requires root access. Compile, then run with root privileges. See the README for more details.")
+			}
+			t.Fatal(err)
+		}
 	}
 	defer func() {
 		dev.Close()
