@@ -10,6 +10,7 @@ require (
 	github.com/getlantern/fdcount v0.0.0-20170105153814-6a6cb5839bc5
 	github.com/getlantern/framed v0.0.0-20190306221922-7f7919c8cf9b
 	github.com/getlantern/golog v0.0.0-20170508214112-cca714f7feb5
+	github.com/getlantern/gonat v0.0.3
 	github.com/getlantern/gotun v0.0.0-20190422200803-35dee1b197b5
 	github.com/getlantern/hex v0.0.0-20190417191902-c6586a6fe0b7 // indirect
 	github.com/getlantern/hidden v0.0.0-20190325191715-f02dbb02be55 // indirect

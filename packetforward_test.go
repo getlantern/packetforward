@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/getlantern/fdcount"
+	"github.com/getlantern/gonat"
 	tun "github.com/getlantern/gotun"
-	"github.com/getlantern/ipproxy"
 	"github.com/getlantern/packetforward/server"
 
 	"github.com/stretchr/testify/assert"
@@ -39,22 +39,13 @@ func TestEndToEnd(t *testing.T) {
 	defer pfl.Close()
 
 	d := &net.Dialer{}
-	s := server.NewServer(&ipproxy.Opts{
+	s := server.NewServer(&gonat.Opts{
+		IFName:        "lo",
 		IdleTimeout:   idleTimeout,
 		StatsInterval: 250 * time.Millisecond,
-		DialTCP: func(ctx context.Context, network, addr string) (net.Conn, error) {
-			// Send everything to local echo server
-			_, port, _ := net.SplitHostPort(addr)
-			return d.DialContext(ctx, network, ip+":"+port)
-		},
-		DialUDP: func(ctx context.Context, network, addr string) (*net.UDPConn, error) {
-			// Send everything to local echo server
-			_, port, _ := net.SplitHostPort(addr)
-			conn, dialErr := net.Dial(network, ip+":"+port)
-			if dialErr != nil {
-				return nil, dialErr
-			}
-			return conn.(*net.UDPConn), nil
+		OnOutbound: func(pkt *gonat.IPPacket) {
+			// Send everything to local echo server\
+			pkt.SetDest(ip, pkt.FT().Dst.Port)
 		},
 	})
 	go s.Serve(pfl)

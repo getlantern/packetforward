@@ -10,8 +10,8 @@ import (
 
 	"github.com/getlantern/framed"
 	"github.com/getlantern/golog"
+	"github.com/getlantern/gonat"
 	"github.com/getlantern/idletiming"
-	"github.com/getlantern/ipproxy"
 )
 
 var log = golog.LoggerFor("packetforward")
@@ -28,13 +28,16 @@ type Server interface {
 }
 
 type server struct {
-	opts      *ipproxy.Opts
+	opts      *gonat.Opts
 	clients   map[string]*client
 	clientsMx sync.Mutex
 }
 
-func NewServer(opts *ipproxy.Opts) Server {
-	opts = opts.ApplyDefaults()
+func NewServer(opts *gonat.Opts) Server {
+	err := opts.ApplyDefaults()
+	if err != nil {
+		log.Errorf("Unable to apply default opts: %v", err)
+	}
 	opts.MTU -= framed.FrameHeaderLength // leave room for framed header
 
 	s := &server{
@@ -95,13 +98,13 @@ func (s *server) handle(conn net.Conn) {
 			framedConn: framedConn,
 		}
 
-		ipp, err := ipproxy.New(c, s.opts)
+		gn, err := gonat.NewServer(c, s.opts)
 		if err != nil {
-			log.Errorf("Unable to open ipproxy: %v", err)
+			log.Errorf("Unable to open gonat: %v", err)
 			return
 		}
 		go func() {
-			if serveErr := ipp.Serve(); serveErr != nil {
+			if serveErr := gn.Serve(); serveErr != nil {
 				log.Errorf("Error handling packets: %v", serveErr)
 			}
 		}()
