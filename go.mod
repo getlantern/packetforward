@@ -8,7 +8,7 @@ require (
 	github.com/getlantern/fdcount v0.0.0-20170105153814-6a6cb5839bc5
 	github.com/getlantern/framed v0.0.0-20190306221922-7f7919c8cf9b
 	github.com/getlantern/golog v0.0.0-20170508214112-cca714f7feb5
-	github.com/getlantern/gonat v0.0.0-20190517023026-64620c5fbc98
+	github.com/getlantern/gonat v0.0.0-20190517024548-cf479301da05
 	github.com/getlantern/gotun v0.0.0-20190422200803-35dee1b197b5
 	github.com/getlantern/idletiming v0.0.0-20190331182121-9540d1aeda2b
 	github.com/getlantern/ipproxy v0.0.0-20190502203022-c6564ee6fba1

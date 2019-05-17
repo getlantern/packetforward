@@ -29,7 +29,12 @@ var (
 // Note - this test has to be run with root permissions to allow setting up the
 // TUN device.
 func TestEndToEnd(t *testing.T) {
-	ip := "192.168.0.187"
+	opts := &gonat.Opts{}
+	err := opts.ApplyDefaults()
+	if !assert.NoError(t, err) {
+		return
+	}
+	ip := opts.IFAddr
 
 	// Create a packetforward server
 	pfl, err := net.Listen("tcp", ip+":0")
