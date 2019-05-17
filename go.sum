@@ -27,6 +27,8 @@ github.com/getlantern/gonat v0.0.0-20190517020424-97390d9a33bd h1:tbY54m7q4rL2ng
 github.com/getlantern/gonat v0.0.0-20190517020424-97390d9a33bd/go.mod h1:TSnFjNoedWoZMEeHy9FzL5zw1LocCAiAxVPt8UiiDRk=
 github.com/getlantern/gonat v0.0.0-20190517020933-6ba74c3596d9 h1:Okbni1JT5F/YL7KlEUjo7WyCv+pYW6ccCJQ42xnS+kU=
 github.com/getlantern/gonat v0.0.0-20190517020933-6ba74c3596d9/go.mod h1:TSnFjNoedWoZMEeHy9FzL5zw1LocCAiAxVPt8UiiDRk=
+github.com/getlantern/gonat v0.0.0-20190517023026-64620c5fbc98 h1:5VAUpZf2XsNyLZW8H09IKGuaoScpwoW2V84AH5bHtYM=
+github.com/getlantern/gonat v0.0.0-20190517023026-64620c5fbc98/go.mod h1:TSnFjNoedWoZMEeHy9FzL5zw1LocCAiAxVPt8UiiDRk=
 github.com/getlantern/gonat v0.0.1 h1:ekjxyT/Wk8RfrmSpM71lU5If+ARMSGvcjswC3isTtGg=
 github.com/getlantern/gonat v0.0.1/go.mod h1:MoO1FFoIiT4nna0uMDyzx8z7TDrpVt7qqeiQMaN7vNU=
 github.com/getlantern/gonat v0.0.2 h1:6hreLlQPisbQ39PNZNT/S09LyXIMXvmxqky/wVFxZvA=
