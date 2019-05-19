@@ -11,7 +11,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/getlantern/errors"
 	"github.com/getlantern/framed"
 	"github.com/getlantern/golog"
 	"github.com/getlantern/gonat"
@@ -39,19 +38,13 @@ type server struct {
 
 // NewServer constructs a new unstarted packetforward Server. The server can be started by
 // calling Serve().
-func NewServer(opts *gonat.Opts) (Server, error) {
-	err := opts.ApplyDefaults()
-	if err != nil {
-		return nil, errors.New("Unable to apply default opts: %v", err)
-	}
-	opts.MTU -= framed.FrameHeaderLength // leave room for framed header
-
+func NewServer(opts *gonat.Opts) Server {
 	s := &server{
 		opts:    opts,
 		clients: make(map[string]*client),
 	}
 	go s.printStats()
-	return s, nil
+	return s
 }
 
 // Serve serves new packetforward client connections inbound on the given Listener.
