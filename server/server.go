@@ -38,13 +38,19 @@ type server struct {
 
 // NewServer constructs a new unstarted packetforward Server. The server can be started by
 // calling Serve().
-func NewServer(opts *gonat.Opts) Server {
+func NewServer(opts *gonat.Opts) (Server, error) {
+	// Apply defaults
+	err := opts.ApplyDefaults()
+	if err != nil {
+		return nil, err
+	}
+
 	s := &server{
 		opts:    opts,
 		clients: make(map[string]*client),
 	}
 	go s.printStats()
-	return s
+	return s, nil
 }
 
 // Serve serves new packetforward client connections inbound on the given Listener.

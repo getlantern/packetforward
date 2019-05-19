@@ -64,7 +64,7 @@ func main() {
 		log.Debug("Closed listener")
 	}()
 
-	s := pserver.NewServer(&gonat.Opts{
+	s, err := pserver.NewServer(&gonat.Opts{
 		IFName:      *ifOut,
 		IdleTimeout: 70 * time.Second,
 		BufferDepth: 10000,
@@ -75,5 +75,8 @@ func main() {
 			pkt.SetSource(*tunGW, ft.Dst.Port)
 		},
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
 	log.Debugf("Final result: %v", s.Serve(l))
 }
