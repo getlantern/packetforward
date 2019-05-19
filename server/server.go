@@ -1,3 +1,6 @@
+// server provides the server end of packetforward functionality. The server reads
+// IP packets from the client's connection, forwards these to the final origin using
+// gonat and writes response packets back to the client.
 package server
 
 import (
@@ -34,6 +37,8 @@ type server struct {
 	clientsMx sync.Mutex
 }
 
+// NewServer constructs a new unstarted packetforward Server. The server can be started by
+// calling Serve().
 func NewServer(opts *gonat.Opts) (Server, error) {
 	err := opts.ApplyDefaults()
 	if err != nil {
@@ -49,6 +54,7 @@ func NewServer(opts *gonat.Opts) (Server, error) {
 	return s, nil
 }
 
+// Serve serves new packetforward client connections inbound on the given Listener.
 func (s *server) Serve(l net.Listener) error {
 	defer s.forgetClients()
 

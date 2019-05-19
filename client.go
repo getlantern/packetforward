@@ -1,3 +1,12 @@
+// packetforward provides a mechanism for forwarding IP packets from a client
+// to a NAT server, which in turn proxies them to their final destination.
+//
+// - Clients are uniquely identified by a random UUID.
+// - Clients connect to the server using a configurable dial function.
+// - In the event of a disconnect, clients can reconnect with the same client ID
+// - Interrupted and resumed client connections do not disconnect the clients' TCP connections to the origin
+// - Currently, packetforward supports only TCP and UDP
+//
 package packetforward
 
 import (
@@ -19,6 +28,8 @@ const (
 	maxDialDelay = 1 * time.Second
 )
 
+// DialFunc is a function that dials a server, preferrably respecting any timeout
+// in the provided Context.
 type DialFunc func(ctx context.Context) (net.Conn, error)
 
 type forwarder struct {
@@ -32,6 +43,13 @@ type forwarder struct {
 	copyToDownstreamError chan error
 }
 
+// Client creates a new packetforward client and returns a WriteCloser. Consumers of packetforward
+// should write whole IP packets to this WriteCloser. The packetforward client will write response
+// packets to the specified downstream Writer. mtu specifies the maximum possible size for transmitted
+// and received IP packets. idleTimeout specifies a timeout for idle clients. When the client to server
+// connection remains idle for longer than idleTimeout, it is automatically closed. dialServer configures
+// how to connect to the packetforward server. When packetforwarding is no longer needed, consumers
+// should Close the returned WriteCloser to clean up any outstanding resources.
 func Client(downstream io.Writer, mtu int, idleTimeout time.Duration, dialServer DialFunc) io.WriteCloser {
 	id := uuid.New().String()
 	return &forwarder{
