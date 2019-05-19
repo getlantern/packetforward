@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/getlantern/errors"
 	"github.com/getlantern/framed"
 	"github.com/getlantern/golog"
 	"github.com/getlantern/gonat"
@@ -33,10 +34,10 @@ type server struct {
 	clientsMx sync.Mutex
 }
 
-func NewServer(opts *gonat.Opts) Server {
+func NewServer(opts *gonat.Opts) (Server, error) {
 	err := opts.ApplyDefaults()
 	if err != nil {
-		log.Errorf("Unable to apply default opts: %v", err)
+		return nil, errors.New("Unable to apply default opts: %v", err)
 	}
 	opts.MTU -= framed.FrameHeaderLength // leave room for framed header
 
@@ -45,7 +46,7 @@ func NewServer(opts *gonat.Opts) Server {
 		clients: make(map[string]*client),
 	}
 	go s.printStats()
-	return s
+	return s, nil
 }
 
 func (s *server) Serve(l net.Listener) error {
@@ -79,6 +80,7 @@ func (s *server) Serve(l net.Listener) error {
 func (s *server) handle(conn net.Conn) {
 	// use framed protocol
 	framedConn := framed.NewReadWriteCloser(conn)
+	framedConn.EnableBigFrames()
 
 	// Read client ID
 	b := make([]byte, 36)

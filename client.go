@@ -110,7 +110,9 @@ func (f *forwarder) writeToUpstream(b []byte) error {
 				continue
 			}
 			f.upstreamConn = idletiming.Conn(upstreamConn, f.idleTimeout, nil)
-			f.upstream = framed.NewReadWriteCloser(f.upstreamConn)
+			rwc := framed.NewReadWriteCloser(f.upstreamConn)
+			rwc.EnableBigFrames()
+			f.upstream = rwc
 			if _, err := f.upstream.Write([]byte(f.id)); err != nil {
 				log.Errorf("Error sending client ID to upstream, will retry: %v", err)
 				continue
