@@ -7,7 +7,7 @@ require (
 	github.com/getlantern/errors v0.0.0-20190325191628-abdb3e3e36f7
 	github.com/getlantern/eventual v0.0.0-20180125201821-84b02499361b
 	github.com/getlantern/fdcount v0.0.0-20170105153814-6a6cb5839bc5
-	github.com/getlantern/framed v0.0.0-20190518220625-fb971439a49b
+	github.com/getlantern/framed v0.0.0-20190520151347-430117a5a5f5
 	github.com/getlantern/golog v0.0.0-20170508214112-cca714f7feb5
 	github.com/getlantern/gonat v0.0.0-20190517155430-602a701992df
 	github.com/getlantern/gotun v0.0.0-20190422200803-35dee1b197b5

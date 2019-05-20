@@ -87,6 +87,7 @@ func (s *server) handle(conn net.Conn) {
 	// use framed protocol
 	framedConn := framed.NewReadWriteCloser(conn)
 	framedConn.EnableBigFrames()
+	framedConn.DisableThreadSafety()
 
 	// Read client ID
 	b := make([]byte, 36)
