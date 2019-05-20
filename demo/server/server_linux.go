@@ -64,15 +64,17 @@ func main() {
 		log.Debug("Closed listener")
 	}()
 
-	s, err := pserver.NewServer(&gonat.Opts{
-		IFName:      *ifOut,
-		IdleTimeout: 70 * time.Second,
-		BufferDepth: 10000,
-		OnOutbound: func(pkt *gonat.IPPacket) {
-			pkt.SetDest(*tcpDest, pkt.FT().Dst.Port)
-		},
-		OnInbound: func(pkt *gonat.IPPacket, ft gonat.FourTuple) {
-			pkt.SetSource(*tunGW, ft.Dst.Port)
+	s, err := pserver.NewServer(&pserver.Opts{
+		Opts: gonat.Opts{
+			IFName:      *ifOut,
+			IdleTimeout: 70 * time.Second,
+			BufferDepth: 100000,
+			OnOutbound: func(pkt *gonat.IPPacket) {
+				pkt.SetDest(*tcpDest, pkt.FT().Dst.Port)
+			},
+			OnInbound: func(pkt *gonat.IPPacket, ft gonat.FourTuple) {
+				pkt.SetSource(*tunGW, ft.Dst.Port)
+			},
 		},
 	})
 	if err != nil {

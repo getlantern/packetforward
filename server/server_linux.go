@@ -21,30 +21,48 @@ import (
 var log = golog.LoggerFor("packetforward")
 
 const (
+	// DefaultBufferPoolSize is 1MB
+	DefaultBufferPoolSize = 1000000
+)
+
+const (
 	maxListenDelay = 1 * time.Second
 
 	baseIODelay = 10 * time.Millisecond
 	maxIODelay  = 1 * time.Second
 )
 
+type Opts struct {
+	gonat.Opts
+
+	// BufferPoolSize is the size of the buffer pool in bytes. If not specified, defaults to 1 MB
+	BufferPoolSize int
+}
+
 type Server interface {
 	Serve(l net.Listener) error
 }
 
 type server struct {
-	opts      *gonat.Opts
+	opts      *Opts
 	clients   map[string]*client
 	clientsMx sync.Mutex
 }
 
 // NewServer constructs a new unstarted packetforward Server. The server can be started by
 // calling Serve().
-func NewServer(opts *gonat.Opts) (Server, error) {
+func NewServer(opts *Opts) (Server, error) {
+	if opts.BufferPoolSize <= 0 {
+		opts.BufferPoolSize = DefaultBufferPoolSize
+	}
+
 	// Apply defaults
 	err := opts.ApplyDefaults()
 	if err != nil {
 		return nil, err
 	}
+
+	opts.BufferPool = framed.NewHeaderPreservingBufferPool(opts.BufferPoolSize, opts.MTU)
 
 	s := &server{
 		opts:    opts,
@@ -88,6 +106,7 @@ func (s *server) handle(conn net.Conn) {
 	framedConn := framed.NewReadWriteCloser(conn)
 	framedConn.EnableBigFrames()
 	framedConn.DisableThreadSafety()
+	framedConn.EnableBuffering(s.opts.MTU)
 
 	// Read client ID
 	b := make([]byte, 36)
@@ -109,7 +128,7 @@ func (s *server) handle(conn net.Conn) {
 			framedConn: efc,
 		}
 
-		gn, err := gonat.NewServer(c, s.opts)
+		gn, err := gonat.NewServer(c, &s.opts.Opts)
 		if err != nil {
 			log.Errorf("Unable to open gonat: %v", err)
 			return
@@ -146,12 +165,12 @@ type client struct {
 	mx         sync.RWMutex
 }
 
-func (c *client) getFramedConn(timeout time.Duration) io.ReadWriteCloser {
+func (c *client) getFramedConn(timeout time.Duration) *framed.ReadWriteCloser {
 	_framedConn, ok := c.framedConn.Get(timeout)
 	if !ok {
 		return nil
 	}
-	return _framedConn.(io.ReadWriteCloser)
+	return _framedConn.(*framed.ReadWriteCloser)
 }
 
 func (c *client) attach(framedConn io.ReadWriteCloser) {
@@ -188,20 +207,28 @@ func (c *client) Read(b []byte) (int, error) {
 }
 
 func (c *client) Write(b []byte) (int, error) {
-	conn := c.getFramedConn(c.s.opts.IdleTimeout)
-	if conn == nil {
-		return c.idled(io.EOF)
+	i := float64(0)
+	for {
+		conn := c.getFramedConn(c.s.opts.IdleTimeout)
+		if conn == nil {
+			return c.idled(io.EOF)
+		}
+		n, err := conn.WriteAtomic(b)
+		if err == nil {
+			c.markActive()
+			return n, err
+		}
+		if c.idle() {
+			return c.idled(idletiming.ErrIdled)
+		}
+		// ignore errors and retry, because clients can reconnect
+		sleepTime := time.Duration(math.Pow(2, i)) * baseIODelay
+		if sleepTime > maxIODelay {
+			sleepTime = maxIODelay
+		}
+		time.Sleep(sleepTime)
+		i++
 	}
-	n, err := conn.Write(b)
-	if err == nil {
-		c.markActive()
-		return n, err
-	}
-	if c.idle() {
-		return c.idled(idletiming.ErrIdled)
-	}
-	log.Errorf("Error writing to client: %v", err)
-	return 0, nil
 }
 
 func (c *client) idled(err error) (int, error) {

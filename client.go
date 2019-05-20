@@ -129,6 +129,7 @@ writeLoop:
 			f.upstreamConn = idletiming.Conn(upstreamConn, f.idleTimeout, nil)
 			rwc := framed.NewReadWriteCloser(f.upstreamConn)
 			rwc.EnableBigFrames()
+			rwc.EnableBuffering(f.mtu)
 			rwc.DisableThreadSafety()
 			f.upstream = rwc
 			if _, err := f.upstream.Write([]byte(f.id)); err != nil {
