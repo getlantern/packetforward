@@ -11,6 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/getlantern/eventual"
 	"github.com/getlantern/framed"
 	"github.com/getlantern/golog"
 	"github.com/getlantern/gonat"
@@ -99,10 +100,12 @@ func (s *server) handle(conn net.Conn) {
 	s.clientsMx.Lock()
 	c := s.clients[id]
 	if c == nil {
+		efc := eventual.NewValue()
+		efc.Set(framedConn)
 		c = &client{
 			id:         id,
 			s:          s,
-			framedConn: framedConn,
+			framedConn: efc,
 		}
 
 		gn, err := gonat.NewServer(c, s.opts)
@@ -137,36 +140,41 @@ func (s *server) forgetClient(id string) {
 type client struct {
 	id         string
 	s          *server
-	framedConn io.ReadWriteCloser
+	framedConn eventual.Value
 	lastActive int64
 	mx         sync.RWMutex
 }
 
-func (c *client) getFramedConn() io.ReadWriteCloser {
-	c.mx.RLock()
-	framedConn := c.framedConn
-	c.mx.RUnlock()
-	return framedConn
+func (c *client) getFramedConn(timeout time.Duration) io.ReadWriteCloser {
+	_framedConn, ok := c.framedConn.Get(timeout)
+	if !ok {
+		return nil
+	}
+	return _framedConn.(io.ReadWriteCloser)
 }
 
 func (c *client) attach(framedConn io.ReadWriteCloser) {
-	if c.framedConn != nil {
-		go c.framedConn.Close()
+	oldFramedConn := c.getFramedConn(0)
+	if oldFramedConn != nil {
+		go oldFramedConn.Close()
 	}
-	c.framedConn = framedConn
+	c.framedConn.Set(framedConn)
 }
 
 func (c *client) Read(b []byte) (int, error) {
 	i := float64(0)
 	for {
-		n, err := c.getFramedConn().Read(b)
+		conn := c.getFramedConn(c.s.opts.IdleTimeout)
+		if conn == nil {
+			return c.idled(io.EOF)
+		}
+		n, err := conn.Read(b)
 		if err == nil {
 			c.markActive()
 			return n, err
 		}
 		if c.idle() {
-			c.s.forgetClient(c.id)
-			return 0, io.EOF
+			return c.idled(io.EOF)
 		}
 		// ignore errors and retry, because clients can reconnect
 		sleepTime := time.Duration(math.Pow(2, i)) * baseIODelay
@@ -179,24 +187,25 @@ func (c *client) Read(b []byte) (int, error) {
 }
 
 func (c *client) Write(b []byte) (int, error) {
-	i := float64(0)
-	for {
-		n, err := c.getFramedConn().Write(b)
-		if err == nil {
-			c.markActive()
-			return n, err
-		}
-		if c.idle() {
-			return 0, idletiming.ErrIdled
-		}
-		// ignore errors and retry, because clients can reconnect
-		sleepTime := time.Duration(math.Pow(2, i)) * baseIODelay
-		if sleepTime > maxIODelay {
-			sleepTime = maxIODelay
-		}
-		time.Sleep(sleepTime)
-		i++
+	conn := c.getFramedConn(c.s.opts.IdleTimeout)
+	if conn == nil {
+		return c.idled(io.EOF)
 	}
+	n, err := conn.Write(b)
+	if err == nil {
+		c.markActive()
+		return n, err
+	}
+	if c.idle() {
+		return c.idled(idletiming.ErrIdled)
+	}
+	log.Errorf("Error writing to client: %v", err)
+	return 0, nil
+}
+
+func (c *client) idled(err error) (int, error) {
+	c.s.forgetClient(c.id)
+	return 0, io.EOF
 }
 
 func (c *client) markActive() {

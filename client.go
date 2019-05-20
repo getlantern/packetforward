@@ -97,11 +97,12 @@ func (f *forwarder) copyToDownstream(upstreamConn net.Conn, upstream io.ReadWrit
 
 func (f *forwarder) writeToUpstream(b []byte) error {
 	// Keep trying to transmit the client packet
-	attempts := float64(-100000)
+	attempts := float64(-1)
 	sleepTime := 50 * time.Millisecond
 	maxSleepTime := f.idleTimeout
 
 	firstDial := true
+writeLoop:
 	for {
 		if attempts > -1 {
 			sleepTime := time.Duration(math.Pow(2, attempts)) * sleepTime
@@ -116,8 +117,6 @@ func (f *forwarder) writeToUpstream(b []byte) error {
 			if !firstDial {
 				// wait for copying to downstream to finish
 				<-f.copyToDownstreamError
-			} else {
-				firstDial = false
 			}
 
 			ctx, cancel := context.WithTimeout(context.Background(), f.idleTimeout)
@@ -125,7 +124,7 @@ func (f *forwarder) writeToUpstream(b []byte) error {
 			cancel()
 			if dialErr != nil {
 				log.Errorf("Error dialing upstream, will retry: %v", dialErr)
-				continue
+				continue writeLoop
 			}
 			f.upstreamConn = idletiming.Conn(upstreamConn, f.idleTimeout, nil)
 			rwc := framed.NewReadWriteCloser(f.upstreamConn)
@@ -133,8 +132,9 @@ func (f *forwarder) writeToUpstream(b []byte) error {
 			f.upstream = rwc
 			if _, err := f.upstream.Write([]byte(f.id)); err != nil {
 				log.Errorf("Error sending client ID to upstream, will retry: %v", err)
-				continue
+				continue writeLoop
 			}
+			firstDial = false
 			go f.copyToDownstream(f.upstreamConn, f.upstream)
 		}
 
@@ -144,7 +144,7 @@ func (f *forwarder) writeToUpstream(b []byte) error {
 		if writeErr != nil {
 			f.closeUpstream()
 			log.Errorf("Unexpected error writing to upstream: %v", writeErr)
-			continue
+			continue writeLoop
 		}
 
 		return nil

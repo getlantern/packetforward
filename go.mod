@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/aristanetworks/goarista v0.0.0-20190502180301-283422fc1708 // indirect
 	github.com/getlantern/errors v0.0.0-20190325191628-abdb3e3e36f7
-	github.com/getlantern/eventual v0.0.0-20180125201821-84b02499361b // indirect
+	github.com/getlantern/eventual v0.0.0-20180125201821-84b02499361b
 	github.com/getlantern/fdcount v0.0.0-20170105153814-6a6cb5839bc5
 	github.com/getlantern/framed v0.0.0-20190518220625-fb971439a49b
 	github.com/getlantern/golog v0.0.0-20170508214112-cca714f7feb5
