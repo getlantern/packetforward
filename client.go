@@ -18,6 +18,7 @@ import (
 
 	"github.com/getlantern/framed"
 	"github.com/getlantern/golog"
+	"github.com/getlantern/gonat"
 	"github.com/getlantern/idletiming"
 	"github.com/getlantern/uuid"
 )
@@ -35,7 +36,6 @@ type DialFunc func(ctx context.Context) (net.Conn, error)
 type forwarder struct {
 	id                    string
 	downstream            io.Writer
-	mtu                   int
 	idleTimeout           time.Duration
 	dialServer            DialFunc
 	upstreamConn          net.Conn
@@ -45,17 +45,15 @@ type forwarder struct {
 
 // Client creates a new packetforward client and returns a WriteCloser. Consumers of packetforward
 // should write whole IP packets to this WriteCloser. The packetforward client will write response
-// packets to the specified downstream Writer. mtu specifies the maximum possible size for transmitted
-// and received IP packets. idleTimeout specifies a timeout for idle clients. When the client to server
-// connection remains idle for longer than idleTimeout, it is automatically closed. dialServer configures
-// how to connect to the packetforward server. When packetforwarding is no longer needed, consumers
-// should Close the returned WriteCloser to clean up any outstanding resources.
-func Client(downstream io.Writer, mtu int, idleTimeout time.Duration, dialServer DialFunc) io.WriteCloser {
+// packets to the specified downstream Writer. idleTimeout specifies a timeout for idle clients.
+// When the client to server connection remains idle for longer than idleTimeout, it is automatically
+// closed. dialServer configures how to connect to the packetforward server. When packetforwarding is
+// no longer needed, consumers should Close the returned WriteCloser to clean up any outstanding resources.
+func Client(downstream io.Writer, idleTimeout time.Duration, dialServer DialFunc) io.WriteCloser {
 	id := uuid.New().String()
 	return &forwarder{
 		id:                    id,
 		downstream:            downstream,
-		mtu:                   mtu,
 		idleTimeout:           idleTimeout,
 		dialServer:            dialServer,
 		copyToDownstreamError: make(chan error, 1),
@@ -76,7 +74,7 @@ func (f *forwarder) Close() error {
 }
 
 func (f *forwarder) copyToDownstream(upstreamConn net.Conn, upstream io.ReadWriteCloser) {
-	b := make([]byte, f.mtu)
+	b := make([]byte, gonat.MaximumIPPacketSize)
 	for {
 		n, readErr := upstream.Read(b)
 		if n > 0 {
@@ -129,7 +127,7 @@ writeLoop:
 			f.upstreamConn = idletiming.Conn(upstreamConn, f.idleTimeout, nil)
 			rwc := framed.NewReadWriteCloser(f.upstreamConn)
 			rwc.EnableBigFrames()
-			rwc.EnableBuffering(f.mtu)
+			rwc.EnableBuffering(gonat.MaximumIPPacketSize)
 			rwc.DisableThreadSafety()
 			f.upstream = rwc
 			if _, err := f.upstream.Write([]byte(f.id)); err != nil {

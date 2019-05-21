@@ -26,7 +26,7 @@ var (
 	tunAddr   = flag.String("tun-address", "10.0.0.2", "tun device address")
 	tunMask   = flag.String("tun-mask", "255.255.255.0", "tun device netmask")
 	tunGW     = flag.String("tun-gw", "10.0.0.1", "tun device gateway")
-	mtu       = flag.Int("mtu", 65535, "maximum transmission unit")
+	mtu       = flag.Int("mtu", 1500, "maximum transmission unit for TUN device")
 	addr      = flag.String("addr", "127.0.0.1:9780", "address of server")
 	pprofAddr = flag.String("pprofaddr", "", "pprof address to listen on, not activate pprof if empty")
 )
@@ -46,7 +46,7 @@ func main() {
 		}()
 	}
 
-	dev, err := tun.OpenTunDevice(*tunDevice, *tunAddr, *tunGW, *tunMask)
+	dev, err := tun.OpenTunDevice(*tunDevice, *tunAddr, *tunGW, *tunMask, *mtu)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -67,7 +67,7 @@ func main() {
 
 	log.Debugf("Using packetforward server at %v", *addr)
 	var d net.Dialer
-	c := packetforward.Client(dev, *mtu, 70*time.Second, func(ctx context.Context) (net.Conn, error) {
+	c := packetforward.Client(dev, 70*time.Second, func(ctx context.Context) (net.Conn, error) {
 		return d.DialContext(ctx, "tcp", *addr)
 	})
 

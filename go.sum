@@ -49,6 +49,10 @@ github.com/getlantern/gonat v0.0.0-20190520185628-c527fda9b8e0 h1:Hv9cSCP6bHnc6q
 github.com/getlantern/gonat v0.0.0-20190520185628-c527fda9b8e0/go.mod h1:zCl6lJC0eWcZsNcRGdHtBfOxtUGsUbxzRhR/epNTEqc=
 github.com/getlantern/gonat v0.0.0-20190520200046-2731df2d03cc h1:C2xrwqlitqKQkQdAs4Jr7PBe7O5/WpA9v6tZwFLcR6k=
 github.com/getlantern/gonat v0.0.0-20190520200046-2731df2d03cc/go.mod h1:zCl6lJC0eWcZsNcRGdHtBfOxtUGsUbxzRhR/epNTEqc=
+github.com/getlantern/gonat v0.0.0-20190521135306-242304f3acc7 h1:2cuFJl7tEZ24MkS2Vyj4JuW+ge9v+6xZciDp8gn7Jpk=
+github.com/getlantern/gonat v0.0.0-20190521135306-242304f3acc7/go.mod h1:ickx+K4b2ojdlrTd2oCcI4XWUFAKcbuhZuW07HkuMBM=
+github.com/getlantern/gonat v0.0.0-20190521155318-acd3481c8f99 h1:u1ZrqqGjwMT/azx4aHNDtJiG7B+TenBFnfVYclQG6vM=
+github.com/getlantern/gonat v0.0.0-20190521155318-acd3481c8f99/go.mod h1:ickx+K4b2ojdlrTd2oCcI4XWUFAKcbuhZuW07HkuMBM=
 github.com/getlantern/gonat v0.0.1 h1:ekjxyT/Wk8RfrmSpM71lU5If+ARMSGvcjswC3isTtGg=
 github.com/getlantern/gonat v0.0.1/go.mod h1:MoO1FFoIiT4nna0uMDyzx8z7TDrpVt7qqeiQMaN7vNU=
 github.com/getlantern/gonat v0.0.2 h1:6hreLlQPisbQ39PNZNT/S09LyXIMXvmxqky/wVFxZvA=
@@ -59,6 +63,8 @@ github.com/getlantern/gotun v0.0.0-20190422200803-35dee1b197b5 h1:RgknT+sLDtsoJE
 github.com/getlantern/gotun v0.0.0-20190422200803-35dee1b197b5/go.mod h1:xBRkm/iNqMm5ND8ZTgiCoyyPAyfY89vbYgtYFWx66lw=
 github.com/getlantern/gotun v0.0.0-20190517161228-5fd9609427d4 h1:xt8Pw0bYiBX6USldD9vH5hS6pLCBup4pedYHDWMV3VI=
 github.com/getlantern/gotun v0.0.0-20190517161228-5fd9609427d4/go.mod h1:1tN1bcYuIxD79XpS3RD+3ptxiBEWwR0p+PG2MsC4Nbo=
+github.com/getlantern/gotun v0.0.0-20190521133812-51bfa687e26b h1:b/m0EoOnfn9NSKpCaCe1nxC8NLZ/CiqvfPx5v5tbCKk=
+github.com/getlantern/gotun v0.0.0-20190521133812-51bfa687e26b/go.mod h1:1tN1bcYuIxD79XpS3RD+3ptxiBEWwR0p+PG2MsC4Nbo=
 github.com/getlantern/grtrack v0.0.0-20160824195228-cbf67d3fa0fd h1:GPrx88jy222gMuRHXxBSViT/3zdNO210nRAaXn+lL6s=
 github.com/getlantern/grtrack v0.0.0-20160824195228-cbf67d3fa0fd/go.mod h1:RkQEgBdrJCH5tYJP2D+a/aJ216V3c9q8w/tCJtEiDoY=
 github.com/getlantern/hex v0.0.0-20190417191902-c6586a6fe0b7 h1:micT5vkcr9tOVk1FiH8SWKID8ultN44Z+yzd2y/Vyb0=

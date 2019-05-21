@@ -62,7 +62,7 @@ func NewServer(opts *Opts) (Server, error) {
 		return nil, err
 	}
 
-	opts.BufferPool = framed.NewHeaderPreservingBufferPool(opts.BufferPoolSize, opts.MTU)
+	opts.BufferPool = framed.NewHeaderPreservingBufferPool(opts.BufferPoolSize, gonat.MaximumIPPacketSize)
 
 	s := &server{
 		opts:    opts,
@@ -106,7 +106,7 @@ func (s *server) handle(conn net.Conn) {
 	framedConn := framed.NewReadWriteCloser(conn)
 	framedConn.EnableBigFrames()
 	framedConn.DisableThreadSafety()
-	framedConn.EnableBuffering(s.opts.MTU)
+	framedConn.EnableBuffering(gonat.MaximumIPPacketSize)
 
 	// Read client ID
 	b := make([]byte, 36)

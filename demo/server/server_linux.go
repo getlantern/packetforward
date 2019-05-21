@@ -23,7 +23,6 @@ var (
 	addr      = flag.String("addr", "127.0.0.1:9780", "address of server")
 	tunGW     = flag.String("tun-gw", "10.0.0.1", "tun device gateway")
 	ifOut     = flag.String("ifout", "", "name of interface to use for outbound connections")
-	mtu       = flag.Int("mtu", 65535, "maximum transmission unit")
 	tcpDest   = flag.String("tcpdest", "80.249.99.148", "destination to which to connect all TCP traffic")
 	udpDest   = flag.String("udpdest", "8.8.8.8", "destination to which to connect all UDP traffic")
 	pprofAddr = flag.String("pprofaddr", "", "pprof address to listen on, not activate pprof if empty")
