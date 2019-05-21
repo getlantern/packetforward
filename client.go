@@ -112,6 +112,7 @@ writeLoop:
 		attempts++
 
 		if f.upstreamConn == nil {
+			log.Debug("Dialing upstream")
 			if !firstDial {
 				// wait for copying to downstream to finish
 				<-f.copyToDownstreamError
