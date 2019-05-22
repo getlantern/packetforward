@@ -190,6 +190,7 @@ func (c *client) Read(b []byte) (int, error) {
 		}
 		n, err := conn.Read(b)
 		if err == nil {
+			log.Debugf("Read %d", n)
 			c.markActive()
 			return n, err
 		}
