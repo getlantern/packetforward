@@ -70,10 +70,10 @@ func main() {
 			IdleTimeout: 70 * time.Second,
 			BufferDepth: 100000,
 			OnOutbound: func(pkt *gonat.IPPacket) {
-				pkt.SetDest(*tcpDest, pkt.FT().Dst.Port)
+				pkt.SetDest(gonat.Addr{*tcpDest, pkt.FT().Dst.Port})
 			},
-			OnInbound: func(pkt *gonat.IPPacket, ft gonat.FourTuple) {
-				pkt.SetSource(*tunGW, ft.Dst.Port)
+			OnInbound: func(pkt *gonat.IPPacket, downFT gonat.FiveTuple) {
+				pkt.SetSource(gonat.Addr{*tunGW, downFT.Dst.Port})
 			},
 		},
 	})

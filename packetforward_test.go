@@ -51,10 +51,10 @@ func TestEndToEnd(t *testing.T) {
 			// StatsInterval: 250 * time.Millisecond,
 			OnOutbound: func(pkt *gonat.IPPacket) {
 				// Send everything to local echo server\
-				pkt.SetDest(ip, pkt.FT().Dst.Port)
+				pkt.SetDest(gonat.Addr{ip, pkt.FT().Dst.Port})
 			},
-			OnInbound: func(pkt *gonat.IPPacket, ft gonat.FourTuple) {
-				pkt.SetSource("10.0.0.9", ft.Dst.Port)
+			OnInbound: func(pkt *gonat.IPPacket, downFT gonat.FiveTuple) {
+				pkt.SetSource(gonat.Addr{"10.0.0.9", downFT.Dst.Port})
 			},
 		},
 	})
