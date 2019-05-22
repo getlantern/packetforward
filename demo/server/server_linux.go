@@ -61,6 +61,7 @@ func main() {
 		log.Debug("Closing listener")
 		l.Close()
 		log.Debug("Closed listener")
+		os.Exit(0)
 	}()
 
 	s, err := pserver.NewServer(&pserver.Opts{

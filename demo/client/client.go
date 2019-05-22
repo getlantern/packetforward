@@ -63,6 +63,7 @@ func main() {
 		log.Debug("Closing TUN device")
 		dev.Close()
 		log.Debug("Closed TUN device")
+		os.Exit(0)
 	}()
 
 	log.Debugf("Using packetforward server at %v", *addr)
