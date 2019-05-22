@@ -45,21 +45,26 @@ func TestEndToEnd(t *testing.T) {
 	log.Debugf("Packetforward listening at %v", pfl.Addr())
 
 	d := &net.Dialer{}
-	s := server.NewServer(&gonat.Opts{
-		IdleTimeout: idleTimeout,
-		// StatsInterval: 250 * time.Millisecond,
-		OnOutbound: func(pkt *gonat.IPPacket) {
-			// Send everything to local echo server\
-			pkt.SetDest(ip, pkt.FT().Dst.Port)
-		},
-		OnInbound: func(pkt *gonat.IPPacket, ft gonat.FourTuple) {
-			pkt.SetSource("10.0.0.9", ft.Dst.Port)
+	s, err := server.NewServer(&server.Opts{
+		Opts: gonat.Opts{
+			IdleTimeout: idleTimeout,
+			// StatsInterval: 250 * time.Millisecond,
+			OnOutbound: func(pkt *gonat.IPPacket) {
+				// Send everything to local echo server\
+				pkt.SetDest(ip, pkt.FT().Dst.Port)
+			},
+			OnInbound: func(pkt *gonat.IPPacket, ft gonat.FourTuple) {
+				pkt.SetSource("10.0.0.9", ft.Dst.Port)
+			},
 		},
 	})
+	if !assert.NoError(t, err) {
+		return
+	}
 	go s.Serve(pfl)
 
 	// Open a TUN device
-	dev, err := tun.OpenTunDevice("tun0", "10.0.0.10", "10.0.0.9", "255.255.255.0")
+	dev, err := tun.OpenTunDevice("tun0", "10.0.0.10", "10.0.0.9", "255.255.255.0", 1500)
 	if err != nil {
 		if err != nil {
 			if strings.HasSuffix(err.Error(), "operation not permitted") {
@@ -73,7 +78,7 @@ func TestEndToEnd(t *testing.T) {
 	}()
 
 	// Forward packets from TUN device
-	writer := Client(dev, 1400, clientIdleTimeout, func(ctx context.Context) (net.Conn, error) {
+	writer := Client(dev, clientIdleTimeout, func(ctx context.Context) (net.Conn, error) {
 		return d.DialContext(ctx, "tcp", pfl.Addr().String())
 	})
 	go func() {
