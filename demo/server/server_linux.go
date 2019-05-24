@@ -12,6 +12,7 @@ import (
 
 	"github.com/getlantern/golog"
 	"github.com/getlantern/gonat"
+	"github.com/getlantern/ops"
 	pserver "github.com/getlantern/packetforward/server"
 )
 
@@ -56,13 +57,13 @@ func main() {
 		syscall.SIGINT,
 		syscall.SIGTERM,
 		syscall.SIGQUIT)
-	go func() {
+	ops.Go(func() {
 		<-ch
 		log.Debug("Closing listener")
 		l.Close()
 		log.Debug("Closed listener")
 		os.Exit(0)
-	}()
+	})
 
 	s, err := pserver.NewServer(&pserver.Opts{
 		Opts: gonat.Opts{

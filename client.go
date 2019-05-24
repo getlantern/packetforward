@@ -20,6 +20,7 @@ import (
 	"github.com/getlantern/golog"
 	"github.com/getlantern/gonat"
 	"github.com/getlantern/idletiming"
+	"github.com/getlantern/ops"
 	"github.com/getlantern/uuid"
 )
 
@@ -136,7 +137,9 @@ writeLoop:
 				continue writeLoop
 			}
 			firstDial = false
-			go f.copyToDownstream(f.upstreamConn, f.upstream)
+			ops.Go(func() {
+				f.copyToDownstream(f.upstreamConn, f.upstream)
+			})
 		}
 
 		attempts = -1

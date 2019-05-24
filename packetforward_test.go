@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	idleTimeout       = 10 * time.Second
-	clientIdleTimeout = 100 * time.Second
+	idleTimeout       = 100 * time.Millisecond
+	clientIdleTimeout = 1 * time.Second
 	tunGW             = "10.0.0.9"
 )
 
@@ -62,6 +62,7 @@ func TestEndToEnd(t *testing.T) {
 			b := make([]byte, gonat.MaximumIPPacketSize)
 			for {
 				n, err := dev.Read(b)
+				log.Debugf("Read %d: %v", n, err)
 				if n > 0 {
 					log.Debugf("Writing %d", n)
 					writer.Write(b[:n])
@@ -73,6 +74,7 @@ func TestEndToEnd(t *testing.T) {
 		}()
 		return func() error {
 			writer.Close()
+			s.Close()
 			return pfl.Close()
 		}, nil
 	})

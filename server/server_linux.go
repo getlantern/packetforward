@@ -41,12 +41,17 @@ type Opts struct {
 
 type Server interface {
 	Serve(l net.Listener) error
+
+	// Close closes this server and associated resources.
+	Close() error
 }
 
 type server struct {
 	opts      *Opts
 	clients   map[string]*client
 	clientsMx sync.Mutex
+	close     chan interface{}
+	closed    chan interface{}
 }
 
 // NewServer constructs a new unstarted packetforward Server. The server can be started by
@@ -67,6 +72,8 @@ func NewServer(opts *Opts) (Server, error) {
 	s := &server{
 		opts:    opts,
 		clients: make(map[string]*client),
+		close:   make(chan interface{}),
+		closed:  make(chan interface{}),
 	}
 	go s.printStats()
 	return s, nil
@@ -74,6 +81,7 @@ func NewServer(opts *Opts) (Server, error) {
 
 // Serve serves new packetforward client connections inbound on the given Listener.
 func (s *server) Serve(l net.Listener) error {
+	defer s.Close()
 	defer s.forgetClients()
 
 	tempDelay := time.Duration(0)
@@ -155,6 +163,17 @@ func (s *server) forgetClient(id string) {
 	s.clientsMx.Lock()
 	delete(s.clients, id)
 	s.clientsMx.Unlock()
+}
+
+func (s *server) Close() error {
+	select {
+	case <-s.close:
+		// already closed
+	default:
+		close(s.close)
+	}
+	<-s.closed
+	return nil
 }
 
 type client struct {

@@ -1,4 +1,5 @@
-# Packet Forward
+packetforward [![GoDoc](https://godoc.org/github.com/getlantern/packetforward?status.png)](http://godoc.org/github.com/getlantern/packetforward)&nbsp;[![Build Status](https://drone.lantern.io/api/badges/getlantern/packetforward/status.svg)](https://drone.lantern.io/getlantern/packetforward)&nbsp;[![Coverage Status](https://coveralls.io/repos/github/getlantern/packetforward/badge.svg?branch=init)](https://coveralls.io/github/getlantern/packetforward)
+==========
 
 A library for forwarding packets.
 
