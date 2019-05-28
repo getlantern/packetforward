@@ -16,6 +16,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/getlantern/errors"
 	"github.com/getlantern/framed"
 	"github.com/getlantern/golog"
 	"github.com/getlantern/gonat"
@@ -96,63 +97,67 @@ func (f *forwarder) copyToDownstream(upstreamConn net.Conn, upstream io.ReadWrit
 
 func (f *forwarder) writeToUpstream(b []byte) error {
 	// Keep trying to transmit the client packet
-	attempts := float64(-1)
+	priorAttempts := float64(-1)
 	sleepTime := 50 * time.Millisecond
 	maxSleepTime := f.idleTimeout
 
 	firstDial := true
-writeLoop:
 	for {
-		if attempts > -1 {
-			sleepTime := time.Duration(math.Pow(2, attempts)) * sleepTime
+		if priorAttempts > -1 {
+			sleepTime := time.Duration(math.Pow(2, priorAttempts)) * sleepTime
 			if sleepTime > maxSleepTime {
 				sleepTime = maxSleepTime
 			}
 			time.Sleep(sleepTime)
 		}
-		attempts++
+		priorAttempts++
 
 		if f.upstreamConn == nil {
-			log.Debug("Dialing upstream")
 			if !firstDial {
 				// wait for copying to downstream to finish
 				<-f.copyToDownstreamError
 			}
-
-			ctx, cancel := context.WithTimeout(context.Background(), f.idleTimeout)
-			upstreamConn, dialErr := f.dialServer(ctx)
-			cancel()
-			if dialErr != nil {
-				log.Errorf("Error dialing upstream, will retry: %v", dialErr)
-				continue writeLoop
-			}
-			f.upstreamConn = idletiming.Conn(upstreamConn, f.idleTimeout, nil)
-			rwc := framed.NewReadWriteCloser(f.upstreamConn)
-			rwc.EnableBigFrames()
-			rwc.EnableBuffering(gonat.MaximumIPPacketSize)
-			rwc.DisableThreadSafety()
-			f.upstream = rwc
-			if _, err := f.upstream.Write([]byte(f.id)); err != nil {
-				log.Errorf("Error sending client ID to upstream, will retry: %v", err)
-				continue writeLoop
+			if err := f.dialUpstream(); err != nil {
+				log.Error(err)
+				continue
 			}
 			firstDial = false
-			ops.Go(func() {
-				f.copyToDownstream(f.upstreamConn, f.upstream)
-			})
 		}
 
-		attempts = -1
+		priorAttempts = -1
 
 		_, writeErr := f.upstream.Write(b)
 		if writeErr != nil {
 			f.closeUpstream()
 			log.Errorf("Unexpected error writing to upstream: %v", writeErr)
-			continue writeLoop
+			continue
 		}
 
 		return nil
 	}
+}
+
+func (f *forwarder) dialUpstream() error {
+	log.Debug("Dialing upstream")
+	ctx, cancel := context.WithTimeout(context.Background(), f.idleTimeout)
+	upstreamConn, dialErr := f.dialServer(ctx)
+	cancel()
+	if dialErr != nil {
+		return errors.New("Error dialing upstream, will retry: %v", dialErr)
+	}
+	f.upstreamConn = idletiming.Conn(upstreamConn, f.idleTimeout, nil)
+	rwc := framed.NewReadWriteCloser(f.upstreamConn)
+	rwc.EnableBigFrames()
+	rwc.EnableBuffering(gonat.MaximumIPPacketSize)
+	rwc.DisableThreadSafety()
+	f.upstream = rwc
+	if _, err := f.upstream.Write([]byte(f.id)); err != nil {
+		return errors.New("Error sending client ID to upstream, will retry: %v", err)
+	}
+	ops.Go(func() {
+		f.copyToDownstream(f.upstreamConn, f.upstream)
+	})
+	return nil
 }
 
 func (f *forwarder) closeUpstream() {
