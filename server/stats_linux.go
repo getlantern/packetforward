@@ -6,6 +6,7 @@ import (
 
 func (s *server) printStats() {
 	defer close(s.closed)
+	defer s.opts.Opts.StatsTracker.Close()
 
 	ticker := time.NewTicker(s.opts.StatsInterval)
 	defer ticker.Stop()
