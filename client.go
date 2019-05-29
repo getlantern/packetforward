@@ -70,31 +70,6 @@ func (f *forwarder) Write(b []byte) (int, error) {
 	return len(b), nil
 }
 
-func (f *forwarder) Close() error {
-	f.closeUpstream()
-	return nil
-}
-
-func (f *forwarder) copyToDownstream(upstreamConn net.Conn, upstream io.ReadWriteCloser) {
-	b := make([]byte, gonat.MaximumIPPacketSize)
-	for {
-		n, readErr := upstream.Read(b)
-		if n > 0 {
-			_, writeErr := f.downstream.Write(b[:n])
-			if writeErr != nil {
-				upstream.Close()
-				f.copyToDownstreamError <- writeErr
-				return
-			}
-		}
-		if readErr != nil {
-			upstream.Close()
-			f.copyToDownstreamError <- readErr
-			return
-		}
-	}
-}
-
 func (f *forwarder) writeToUpstream(b []byte) error {
 	// Keep trying to transmit the client packet
 	priorAttempts := float64(-1)
@@ -145,19 +120,40 @@ func (f *forwarder) dialUpstream() error {
 	if dialErr != nil {
 		return errors.New("Error dialing upstream, will retry: %v", dialErr)
 	}
-	f.upstreamConn = idletiming.Conn(upstreamConn, f.idleTimeout, nil)
-	rwc := framed.NewReadWriteCloser(f.upstreamConn)
+	upstreamConn = idletiming.Conn(upstreamConn, f.idleTimeout, nil)
+	rwc := framed.NewReadWriteCloser(upstreamConn)
 	rwc.EnableBigFrames()
 	rwc.EnableBuffering(gonat.MaximumIPPacketSize)
 	rwc.DisableThreadSafety()
-	f.upstream = rwc
-	if _, err := f.upstream.Write([]byte(f.id)); err != nil {
+	upstream := rwc
+	if _, err := upstream.Write([]byte(f.id)); err != nil {
 		return errors.New("Error sending client ID to upstream, will retry: %v", err)
 	}
+	f.upstreamConn, f.upstream = upstreamConn, upstream
 	ops.Go(func() {
-		f.copyToDownstream(f.upstreamConn, f.upstream)
+		f.copyToDownstream(upstreamConn, upstream)
 	})
 	return nil
+}
+
+func (f *forwarder) copyToDownstream(upstreamConn net.Conn, upstream io.ReadWriteCloser) {
+	b := make([]byte, gonat.MaximumIPPacketSize)
+	for {
+		n, readErr := upstream.Read(b)
+		if n > 0 {
+			_, writeErr := f.downstream.Write(b[:n])
+			if writeErr != nil {
+				upstream.Close()
+				f.copyToDownstreamError <- writeErr
+				return
+			}
+		}
+		if readErr != nil {
+			upstream.Close()
+			f.copyToDownstreamError <- readErr
+			return
+		}
+	}
 }
 
 func (f *forwarder) closeUpstream() {
@@ -166,4 +162,10 @@ func (f *forwarder) closeUpstream() {
 		f.upstream = nil
 		f.upstreamConn = nil
 	}
+}
+
+func (f *forwarder) Close() error {
+	f.closeUpstream()
+	<-f.copyToDownstreamError
+	return nil
 }

@@ -3,6 +3,7 @@ package packetforward
 import (
 	"context"
 	"io"
+	"math/rand"
 	"net"
 	"testing"
 	"time"
@@ -56,7 +57,11 @@ func TestEndToEnd(t *testing.T) {
 
 		// Forward packets from TUN device
 		writer := Client(dev, clientIdleTimeout, func(ctx context.Context) (net.Conn, error) {
-			return d.DialContext(ctx, "tcp", pfl.Addr().String())
+			conn, err := d.DialContext(ctx, "tcp", pfl.Addr().String())
+			if conn != nil {
+				conn = &autoCloseConn{Conn: conn}
+			}
+			return conn, err
 		})
 		go func() {
 			b := make([]byte, gonat.MaximumIPPacketSize)
@@ -78,4 +83,21 @@ func TestEndToEnd(t *testing.T) {
 			return pfl.Close()
 		}, nil
 	})
+}
+
+var writes = 0
+
+type autoCloseConn struct {
+	net.Conn
+}
+
+func (c *autoCloseConn) Write(b []byte) (int, error) {
+	n, err := c.Conn.Write(b)
+	log.Debugf("%d / %d: %v", n, len(b), err)
+	if writes > 2 && rand.Float64() < 0.20 {
+		// Randomly close the connection 20% of the time, but not on the first two writes (client id)
+		c.Close()
+	}
+	writes++
+	return n, err
 }
