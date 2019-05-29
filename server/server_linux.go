@@ -143,7 +143,9 @@ func (s *server) handle(conn net.Conn) {
 		}
 		go func() {
 			if serveErr := gn.Serve(); serveErr != nil {
-				log.Errorf("Error handling packets: %v", serveErr)
+				if serveErr != io.EOF {
+					log.Errorf("Error handling packets: %v", serveErr)
+				}
 			}
 		}()
 		s.clients[id] = c
