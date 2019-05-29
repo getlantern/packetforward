@@ -110,6 +110,8 @@ github.com/getlantern/idletiming v0.0.0-20190331182121-9540d1aeda2b h1:fR5xnj6A0
 github.com/getlantern/idletiming v0.0.0-20190331182121-9540d1aeda2b/go.mod h1:MGP8kEgZGgAhvHISt0hJGQgxg/VAqGdw3+kSZBnfC/4=
 github.com/getlantern/idletiming v0.0.0-20190529141348-2e897609c5cd h1:XQ77PUQ6v4sqrX8AcZN3jEze+rU7CchCAdZpF+/5Q/U=
 github.com/getlantern/idletiming v0.0.0-20190529141348-2e897609c5cd/go.mod h1:MGP8kEgZGgAhvHISt0hJGQgxg/VAqGdw3+kSZBnfC/4=
+github.com/getlantern/idletiming v0.0.0-20190529182719-d2fbc83372a5 h1:laM1s/bxUH8xbbC9TBGWsOc7A0KCAPZMa4pdwO5e6Vw=
+github.com/getlantern/idletiming v0.0.0-20190529182719-d2fbc83372a5/go.mod h1:MGP8kEgZGgAhvHISt0hJGQgxg/VAqGdw3+kSZBnfC/4=
 github.com/getlantern/ipproxy v0.0.0-20190502203022-c6564ee6fba1 h1:05pPp9/ONzEo7uGR79DLUDkkzNy4OLvt1x22BAjJ/cc=
 github.com/getlantern/ipproxy v0.0.0-20190502203022-c6564ee6fba1/go.mod h1:AX6L48UflMFs/pkaXppIu4VblJZvT8ES9mTO0nSnpd8=
 github.com/getlantern/ipproxy v0.0.0-20190508162323-6329c3cbf2fa/go.mod h1:fVWS6Ae51b4r28K6AQPgt6ZER9wX6wGrDzFm2JpGttw=

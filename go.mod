@@ -10,7 +10,7 @@ require (
 	github.com/getlantern/golog v0.0.0-20170508214112-cca714f7feb5
 	github.com/getlantern/gonat v0.0.0-20190529173419-29894751ebec
 	github.com/getlantern/gotun v0.0.0-20190523194503-885514e382d2
-	github.com/getlantern/idletiming v0.0.0-20190529141348-2e897609c5cd
+	github.com/getlantern/idletiming v0.0.0-20190529182719-d2fbc83372a5
 	github.com/getlantern/ipproxy v0.0.0-20190502203022-c6564ee6fba1
 	github.com/getlantern/ops v0.0.0-20190325191751-d70cb0d6f85f
 	github.com/getlantern/uuid v1.1.2-0.20190507182000-5c9436b8c718
