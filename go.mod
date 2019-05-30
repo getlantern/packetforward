@@ -3,12 +3,13 @@ module github.com/getlantern/packetforward
 go 1.12
 
 require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/getlantern/errors v0.0.0-20190325191628-abdb3e3e36f7
 	github.com/getlantern/eventual v0.0.0-20180125201821-84b02499361b
 	github.com/getlantern/fdcount v0.0.0-20170105153814-6a6cb5839bc5
-	github.com/getlantern/framed v0.0.0-20190530204739-68011036ad56
+	github.com/getlantern/framed v0.0.0-20190530205914-53a68d971aef
 	github.com/getlantern/golog v0.0.0-20170508214112-cca714f7feb5
-	github.com/getlantern/gonat v0.0.0-20190530202721-0b7bd9f6a382
+	github.com/getlantern/gonat v0.0.0-20190530205736-af2e31f0c56d
 	github.com/getlantern/gotun v0.0.0-20190523194503-885514e382d2
 	github.com/getlantern/idletiming v0.0.0-20190529182719-d2fbc83372a5
 	github.com/getlantern/ipproxy v0.0.0-20190502203022-c6564ee6fba1

@@ -20,11 +20,12 @@ github.com/getlantern/fdcount v0.0.0-20170105153814-6a6cb5839bc5 h1:8Q9iN/V24EG0
 github.com/getlantern/fdcount v0.0.0-20170105153814-6a6cb5839bc5/go.mod h1:XZwE+iIlAgr64OFbXKFNCllBwV4wEipPx8Hlo2gZdbM=
 github.com/getlantern/framed v0.0.0-20190530204739-68011036ad56 h1:gFh02u57H6SepEjVLPaqM9zBZjxv9tLOlakoxXsIclI=
 github.com/getlantern/framed v0.0.0-20190530204739-68011036ad56/go.mod h1:FE5aaC48/o6r8V/COJsEPUtqCrv0g/W6xQv7vgochJk=
+github.com/getlantern/framed v0.0.0-20190530205914-53a68d971aef h1:p/ir5K29w2zuV8DkAYurmkPG3A7EiFHVPmH3/KDMYyc=
+github.com/getlantern/framed v0.0.0-20190530205914-53a68d971aef/go.mod h1:nhnoiS6DE6zfe+BaCMU4YI01UpsuiXnDqM5S8jxHuuI=
 github.com/getlantern/golog v0.0.0-20170508214112-cca714f7feb5 h1:Okd7vkn9CfIgDBj1ST/vtBTCfD/kxIhYD412K+FRKPc=
 github.com/getlantern/golog v0.0.0-20170508214112-cca714f7feb5/go.mod h1:Vwx1Cg64gCdIalad44uvQsKZw6LsVczIKZrUBStEjVw=
-github.com/getlantern/gonat v0.0.0-20190530173758-5224fdc2abc6/go.mod h1:Pc6msN9nO02KAPgZZQX9N3g7Nn9ZNgUJWBW/IEqw/T8=
-github.com/getlantern/gonat v0.0.0-20190530202721-0b7bd9f6a382 h1:TtKWLHTnQDHmL4DSP/QlthGBfgSbWXEb2osii9Q6Wj0=
-github.com/getlantern/gonat v0.0.0-20190530202721-0b7bd9f6a382/go.mod h1:0md16xZgTqmSLnbXU4FQzpUcZ9kt/1ZdZ0kB+QI6/vE=
+github.com/getlantern/gonat v0.0.0-20190530205736-af2e31f0c56d h1:Suy5N5Sw+OxPih9K19gxebVvPiZ+B/dLnKa3Q0hiWrY=
+github.com/getlantern/gonat v0.0.0-20190530205736-af2e31f0c56d/go.mod h1:0md16xZgTqmSLnbXU4FQzpUcZ9kt/1ZdZ0kB+QI6/vE=
 github.com/getlantern/gotun v0.0.0-20190422200803-35dee1b197b5 h1:RgknT+sLDtsoJEySPGJHagDVJFyOVIXTkY4Cks8xWTg=
 github.com/getlantern/gotun v0.0.0-20190422200803-35dee1b197b5/go.mod h1:xBRkm/iNqMm5ND8ZTgiCoyyPAyfY89vbYgtYFWx66lw=
 github.com/getlantern/gotun v0.0.0-20190517161228-5fd9609427d4 h1:xt8Pw0bYiBX6USldD9vH5hS6pLCBup4pedYHDWMV3VI=
