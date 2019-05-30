@@ -4,6 +4,7 @@
 package server
 
 import (
+	"errors"
 	"io"
 	"math"
 	"net"
@@ -16,9 +17,15 @@ import (
 	"github.com/getlantern/golog"
 	"github.com/getlantern/gonat"
 	"github.com/getlantern/idletiming"
+	"github.com/oxtoacart/bpool"
 )
 
-var log = golog.LoggerFor("packetforward")
+var (
+	log = golog.LoggerFor("packetforward")
+
+	// ErrNoConnection means that we attempted to write to client for which we have no current connection
+	ErrNoConnection = errors.New("no client connection")
+)
 
 const (
 	// DefaultBufferPoolSize is 1MB
@@ -67,7 +74,7 @@ func NewServer(opts *Opts) (Server, error) {
 		return nil, err
 	}
 
-	opts.BufferPool = framed.NewHeaderPreservingBufferPool(opts.BufferPoolSize, gonat.MaximumIPPacketSize)
+	opts.BufferPool = framed.NewHeaderPreservingBufferPool(opts.BufferPoolSize, gonat.MaximumIPPacketSize, true)
 
 	s := &server{
 		opts:    opts,
@@ -202,21 +209,21 @@ func (c *client) attach(framedConn io.ReadWriteCloser) {
 	c.framedConn.Set(framedConn)
 }
 
-func (c *client) Read(b []byte) (int, error) {
+func (c *client) Read(b bpool.ByteSlice) (int, error) {
 	i := float64(0)
 	for {
 		conn := c.getFramedConn(c.s.opts.IdleTimeout)
 		if conn == nil {
-			return c.idled(io.EOF)
+			return c.finished(io.EOF)
 		}
-		n, err := conn.Read(b)
+		n, err := conn.Read(b.Bytes())
 		if err == nil {
 			log.Debugf("Read %d", n)
 			c.markActive()
 			return n, err
 		}
 		if c.idle() {
-			return c.idled(io.EOF)
+			return c.finished(io.EOF)
 		}
 		// ignore errors and retry, because clients can reconnect
 		sleepTime := time.Duration(math.Pow(2, i)) * baseIODelay
@@ -228,12 +235,12 @@ func (c *client) Read(b []byte) (int, error) {
 	}
 }
 
-func (c *client) Write(b []byte) (int, error) {
+func (c *client) Write(b bpool.ByteSlice) (int, error) {
 	i := float64(0)
 	for {
 		conn := c.getFramedConn(c.s.opts.IdleTimeout)
 		if conn == nil {
-			return c.idled(io.EOF)
+			return c.finished(ErrNoConnection)
 		}
 		n, err := conn.WriteAtomic(b)
 		if err == nil {
@@ -241,7 +248,7 @@ func (c *client) Write(b []byte) (int, error) {
 			return n, err
 		}
 		if c.idle() {
-			return c.idled(idletiming.ErrIdled)
+			return c.finished(idletiming.ErrIdled)
 		}
 		// ignore errors and retry, because clients can reconnect
 		sleepTime := time.Duration(math.Pow(2, i)) * baseIODelay
@@ -253,9 +260,9 @@ func (c *client) Write(b []byte) (int, error) {
 	}
 }
 
-func (c *client) idled(err error) (int, error) {
+func (c *client) finished(err error) (int, error) {
 	c.s.forgetClient(c.id)
-	return 0, io.EOF
+	return 0, err
 }
 
 func (c *client) markActive() {

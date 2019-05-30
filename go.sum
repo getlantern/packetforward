@@ -32,6 +32,12 @@ github.com/getlantern/framed v0.0.0-20190522160907-7c0676b33f24 h1:/J2Dxzl3RyPmx
 github.com/getlantern/framed v0.0.0-20190522160907-7c0676b33f24/go.mod h1:FfRS9PAR8weqaF0Ik7Semtrw+CrH1cpELSCdoFrm+nc=
 github.com/getlantern/framed v0.0.0-20190524160045-6ccdff51cb44 h1:Zl0/BFYgEngSlIUGf/XtCZ9o8HQjjX9fdsylM2Tt9DI=
 github.com/getlantern/framed v0.0.0-20190524160045-6ccdff51cb44/go.mod h1:0YL9EFe/pR1LBtvJ0FTENoFJbv80hsi5NpqgdRyHC3U=
+github.com/getlantern/framed v0.0.0-20190530174900-0c435faa010e h1:YaI6vX9LB+2gNIphAN/uYCC4hl/2vn8eo+xL/OWI3bs=
+github.com/getlantern/framed v0.0.0-20190530174900-0c435faa010e/go.mod h1:qQG1zZIVprlfR77UyY63DNWS2DNVOnpgsy1SxhgJeFQ=
+github.com/getlantern/framed v0.0.0-20190530175435-5e45708c6600 h1:UqKYfWy0E56Q8SzCWN3BTG6vjJx0sjjhCAD8LuO0QyQ=
+github.com/getlantern/framed v0.0.0-20190530175435-5e45708c6600/go.mod h1:qQG1zZIVprlfR77UyY63DNWS2DNVOnpgsy1SxhgJeFQ=
+github.com/getlantern/framed v0.0.0-20190530202930-32f82de60274 h1:7/d4GXV/uAhQUE37st2KxmOBTaZlgOy7F1Rltv9ihYE=
+github.com/getlantern/framed v0.0.0-20190530202930-32f82de60274/go.mod h1:FE5aaC48/o6r8V/COJsEPUtqCrv0g/W6xQv7vgochJk=
 github.com/getlantern/golog v0.0.0-20170508214112-cca714f7feb5 h1:Okd7vkn9CfIgDBj1ST/vtBTCfD/kxIhYD412K+FRKPc=
 github.com/getlantern/golog v0.0.0-20170508214112-cca714f7feb5/go.mod h1:Vwx1Cg64gCdIalad44uvQsKZw6LsVczIKZrUBStEjVw=
 github.com/getlantern/gonat v0.0.0-20190511193819-f669948938a5 h1:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=
@@ -86,6 +92,12 @@ github.com/getlantern/gonat v0.0.0-20190529171739-efcd02b90ed2 h1:tX47K6WGEqJz3Q
 github.com/getlantern/gonat v0.0.0-20190529171739-efcd02b90ed2/go.mod h1:5n09M0Df8naTs6IJ4q8kEFta2z/1FUJV0G6iNeu4u8Y=
 github.com/getlantern/gonat v0.0.0-20190529173419-29894751ebec h1:g6NQLTqKOrrkPayJvJrq3PaFGHjlHn8bWNn7s8XBbbk=
 github.com/getlantern/gonat v0.0.0-20190529173419-29894751ebec/go.mod h1:5n09M0Df8naTs6IJ4q8kEFta2z/1FUJV0G6iNeu4u8Y=
+github.com/getlantern/gonat v0.0.0-20190530173758-5224fdc2abc6 h1:lKOYaDr8w1l5FlJlAcO8ubI6+1aOkucLX9Brbn7QtdA=
+github.com/getlantern/gonat v0.0.0-20190530173758-5224fdc2abc6/go.mod h1:Pc6msN9nO02KAPgZZQX9N3g7Nn9ZNgUJWBW/IEqw/T8=
+github.com/getlantern/gonat v0.0.0-20190530184304-de391cae4355 h1:Yg23/kjKRdpwnbIspy6P+qpMDEP47zWD88JzUSmbkP0=
+github.com/getlantern/gonat v0.0.0-20190530184304-de391cae4355/go.mod h1:Pc6msN9nO02KAPgZZQX9N3g7Nn9ZNgUJWBW/IEqw/T8=
+github.com/getlantern/gonat v0.0.0-20190530202721-0b7bd9f6a382 h1:TtKWLHTnQDHmL4DSP/QlthGBfgSbWXEb2osii9Q6Wj0=
+github.com/getlantern/gonat v0.0.0-20190530202721-0b7bd9f6a382/go.mod h1:0md16xZgTqmSLnbXU4FQzpUcZ9kt/1ZdZ0kB+QI6/vE=
 github.com/getlantern/gonat v0.0.1 h1:ekjxyT/Wk8RfrmSpM71lU5If+ARMSGvcjswC3isTtGg=
 github.com/getlantern/gonat v0.0.1/go.mod h1:MoO1FFoIiT4nna0uMDyzx8z7TDrpVt7qqeiQMaN7vNU=
 github.com/getlantern/gonat v0.0.2 h1:6hreLlQPisbQ39PNZNT/S09LyXIMXvmxqky/wVFxZvA=
@@ -124,8 +136,6 @@ github.com/getlantern/ops v0.0.0-20190325191751-d70cb0d6f85f h1:wrYrQttPS8FHIRSl
 github.com/getlantern/ops v0.0.0-20190325191751-d70cb0d6f85f/go.mod h1:D5ao98qkA6pxftxoqzibIBBrLSUli+kYnJqrgBf9cIA=
 github.com/getlantern/packetforward v0.0.1/go.mod h1:0LcDJxQJQrC0xOokc940jFtAQ4GymkGmlDGyAvPKaNg=
 github.com/getlantern/testify v0.0.0-20160317154340-2eeb3906e78f/go.mod h1:uKKI9HSwZ4C8tx1vV+ovbG32Lw9LixtzPLNiS8U/ddA=
-github.com/getlantern/unsafeslice v0.0.0-20190520180502-c8f6b3669ee7 h1:i+B+J1iSzDzWk55c/zEN+sgR65ACMGeVMaE3w2zRDD8=
-github.com/getlantern/unsafeslice v0.0.0-20190520180502-c8f6b3669ee7/go.mod h1:PeFqOiBuVbJS5jrGodEO2CLCri7/risp5AmmQV0mB8U=
 github.com/getlantern/uuid v1.1.2-0.20190507171546-7c701662a263 h1:TL1Ks/pt4HGLuBxJeb5/XNarJ6J3zykmIZBY8OS17VY=
 github.com/getlantern/uuid v1.1.2-0.20190507171546-7c701662a263/go.mod h1:uX10hOzZUUDR+oYNSIks+RcozOEiwTNC/K2rw9SUi1k=
 github.com/getlantern/uuid v1.1.2-0.20190507182000-5c9436b8c718 h1:CerNWjQqXU4l70wjIDMtnDIRsKvBRjDOKfCg4s56zes=
@@ -148,6 +158,10 @@ github.com/oxtoacart/bpool v0.0.0-20190227141107-8c4636f812cc h1:uhnyuvDwdKbjemA
 github.com/oxtoacart/bpool v0.0.0-20190227141107-8c4636f812cc/go.mod h1:L3UMQOThbttwfYRNFOWLLVXMhk5Lkio4GGOtw5UrxS0=
 github.com/oxtoacart/bpool v0.0.0-20190524125616-8c0b41497736 h1:C9bEdTfu5QY+TIf4ohXC2oWkT88Qq3/t1yiUxf/Guvs=
 github.com/oxtoacart/bpool v0.0.0-20190524125616-8c0b41497736/go.mod h1:L3UMQOThbttwfYRNFOWLLVXMhk5Lkio4GGOtw5UrxS0=
+github.com/oxtoacart/bpool v0.0.0-20190530173437-18b0496e4113 h1:sN9LdxWNPtGP6pKLZMHbs5ZF6gcj0bN7KjmrGGcKPDc=
+github.com/oxtoacart/bpool v0.0.0-20190530173437-18b0496e4113/go.mod h1:X07ZCGwUbLaax7L0S3Tw4hpejzu63ZrrQiUe6W0hcy0=
+github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c h1:rp5dCmg/yLR3mgFuSOe4oEnDDmGLROTvMragMUXpTQw=
+github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c/go.mod h1:X07ZCGwUbLaax7L0S3Tw4hpejzu63ZrrQiUe6W0hcy0=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
