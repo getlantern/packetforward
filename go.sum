@@ -22,6 +22,8 @@ github.com/getlantern/framed v0.0.0-20190530204739-68011036ad56 h1:gFh02u57H6Sep
 github.com/getlantern/framed v0.0.0-20190530204739-68011036ad56/go.mod h1:FE5aaC48/o6r8V/COJsEPUtqCrv0g/W6xQv7vgochJk=
 github.com/getlantern/framed v0.0.0-20190530205914-53a68d971aef h1:p/ir5K29w2zuV8DkAYurmkPG3A7EiFHVPmH3/KDMYyc=
 github.com/getlantern/framed v0.0.0-20190530205914-53a68d971aef/go.mod h1:nhnoiS6DE6zfe+BaCMU4YI01UpsuiXnDqM5S8jxHuuI=
+github.com/getlantern/framed v0.0.0-20190601192238-ceb6431eeede h1:yrU6Px3ZkvCsDLPryPGi6FN+2iqFPq+JeCb7EFoDBhw=
+github.com/getlantern/framed v0.0.0-20190601192238-ceb6431eeede/go.mod h1:nhnoiS6DE6zfe+BaCMU4YI01UpsuiXnDqM5S8jxHuuI=
 github.com/getlantern/golog v0.0.0-20170508214112-cca714f7feb5 h1:Okd7vkn9CfIgDBj1ST/vtBTCfD/kxIhYD412K+FRKPc=
 github.com/getlantern/golog v0.0.0-20170508214112-cca714f7feb5/go.mod h1:Vwx1Cg64gCdIalad44uvQsKZw6LsVczIKZrUBStEjVw=
 github.com/getlantern/gonat v0.0.0-20190530205736-af2e31f0c56d h1:Suy5N5Sw+OxPih9K19gxebVvPiZ+B/dLnKa3Q0hiWrY=
