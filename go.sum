@@ -59,6 +59,7 @@ github.com/getlantern/netx v0.0.0-20190110220209-9912de6f94fd/go.mod h1:wKdY0ikO
 github.com/getlantern/ops v0.0.0-20190325191751-d70cb0d6f85f h1:wrYrQttPS8FHIRSlsrcuKazukx/xqO/PpLZzZXsF+EA=
 github.com/getlantern/ops v0.0.0-20190325191751-d70cb0d6f85f/go.mod h1:D5ao98qkA6pxftxoqzibIBBrLSUli+kYnJqrgBf9cIA=
 github.com/getlantern/packetforward v0.0.1/go.mod h1:0LcDJxQJQrC0xOokc940jFtAQ4GymkGmlDGyAvPKaNg=
+github.com/getlantern/testify v0.0.0-20160317154340-2eeb3906e78f h1:R6iv+VzCrbxlBm2TcgyJi9c7tQguNXi9JmIvuUJKrdc=
 github.com/getlantern/testify v0.0.0-20160317154340-2eeb3906e78f/go.mod h1:uKKI9HSwZ4C8tx1vV+ovbG32Lw9LixtzPLNiS8U/ddA=
 github.com/getlantern/uuid v1.1.2-0.20190507171546-7c701662a263 h1:TL1Ks/pt4HGLuBxJeb5/XNarJ6J3zykmIZBY8OS17VY=
 github.com/getlantern/uuid v1.1.2-0.20190507171546-7c701662a263/go.mod h1:uX10hOzZUUDR+oYNSIks+RcozOEiwTNC/K2rw9SUi1k=
