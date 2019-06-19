@@ -204,7 +204,6 @@ func (c *client) Read(b bpool.ByteSlice) (int, error) {
 		}
 		n, err := conn.Read(b.Bytes())
 		if err == nil {
-			log.Debugf("Read %d", n)
 			c.markActive()
 			return n, err
 		}
