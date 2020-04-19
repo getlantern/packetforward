@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/getlantern/golog"
-	tun "github.com/getlantern/gotun"
+	"github.com/getlantern/gonat"
 	"github.com/getlantern/packetforward"
 )
 
@@ -46,7 +46,7 @@ func main() {
 		}()
 	}
 
-	dev, err := tun.OpenTunDevice(*tunDevice, *tunAddr, *tunGW, *tunMask, *mtu)
+	dev, err := gonat.TUNDevice(*tunDevice, *tunAddr, *tunMask, *mtu)
 	if err != nil {
 		log.Fatal(err)
 	}
