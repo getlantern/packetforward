@@ -15,8 +15,7 @@ Be careful if you choose to run the Go tool with the sudo command (e.g. `sudo go
 
 ## Demo
 
-This repository includes a demo client and server in `demo/client` and `demo/server`. In order
-to run the server, you'll need the prerequisites listed in http://github.com/getlantern/gotun.
+This repository includes a demo client and server in `demo/client` and `demo/server`.
 
 The server forwards TCP and UDP packets to hardcoded IP addresses configured with the `-tcpdest` and `-udpdest` flags.
 
