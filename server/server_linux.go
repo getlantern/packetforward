@@ -6,7 +6,6 @@ package server
 import (
 	"errors"
 	"io"
-	"math"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -30,21 +29,28 @@ var (
 const (
 	// DefaultBufferPoolSize is 1MB
 	DefaultBufferPoolSize = 1000000
+
+	// DefaultReadBufferSize is gonat.MaximumIPPacketSize
+	DefaultReadBufferSize = gonat.MaximumIPPacketSize
 )
 
 const (
 	maxListenDelay = 1 * time.Second
 
-	baseIODelay = 10 * time.Millisecond
-	maxIODelay  = 1 * time.Second
+	baseIODelay = 250 * time.Millisecond
+	maxIODelay  = 10 * time.Second
 )
 
 type server struct {
-	opts      *Opts
-	clients   map[string]*client
-	clientsMx sync.Mutex
-	close     chan interface{}
-	closed    chan interface{}
+	successfulReads  int64
+	failedReads      int64
+	successfulWrites int64
+	failedWrites     int64
+	opts             *Opts
+	clients          map[string]*client
+	clientsMx        sync.Mutex
+	close            chan interface{}
+	closed           chan interface{}
 }
 
 // NewServer constructs a new unstarted packetforward Server. The server can be started by
@@ -52,6 +58,10 @@ type server struct {
 func NewServer(opts *Opts) (Server, error) {
 	if opts.BufferPoolSize <= 0 {
 		opts.BufferPoolSize = DefaultBufferPoolSize
+	}
+
+	if opts.ReadBufferSize <= 0 {
+		opts.ReadBufferSize = DefaultReadBufferSize
 	}
 
 	// Apply defaults
@@ -107,7 +117,7 @@ func (s *server) handle(conn net.Conn) {
 	framedConn := framed.NewReadWriteCloser(conn)
 	framedConn.EnableBigFrames()
 	framedConn.DisableThreadSafety()
-	framedConn.EnableBuffering(gonat.MaximumIPPacketSize)
+	framedConn.EnableBuffering(s.opts.ReadBufferSize)
 
 	// Read client ID
 	b := make([]byte, 36)
@@ -128,6 +138,7 @@ func (s *server) handle(conn net.Conn) {
 			s:          s,
 			framedConn: efc,
 		}
+		c.markActive()
 
 		gn, err := gonat.NewServer(c, &s.opts.Opts)
 		if err != nil {
@@ -172,11 +183,12 @@ func (s *server) Close() error {
 }
 
 type client struct {
-	id         string
-	s          *server
-	framedConn eventual.Value
-	lastActive int64
-	mx         sync.RWMutex
+	failedOnCurrentConn int64
+	lastActive          int64
+	id                  string
+	s                   *server
+	framedConn          eventual.Value
+	mx                  sync.RWMutex
 }
 
 func (c *client) getFramedConn(timeout time.Duration) *framed.ReadWriteCloser {
@@ -192,60 +204,78 @@ func (c *client) attach(framedConn io.ReadWriteCloser) {
 	if oldFramedConn != nil {
 		go oldFramedConn.Close()
 	}
+	atomic.StoreInt64(&c.failedOnCurrentConn, 0)
 	c.framedConn.Set(framedConn)
 }
 
 func (c *client) Read(b bpool.ByteSlice) (int, error) {
-	i := float64(0)
+	i := 0
 	for {
 		conn := c.getFramedConn(c.s.opts.IdleTimeout)
-		if conn == nil {
+		if conn == nil || c.idle() {
 			return c.finished(io.EOF)
 		}
+
+		if c.isFailedOnCurrentConn() {
+			// wait for client to reconnect before idling
+			i = sleepWithExponentialBackoff(i)
+			continue
+		}
+
+		// we're not failed, let's read
+		i = 0
+
 		n, err := conn.Read(b.Bytes())
 		if err == nil {
 			c.markActive()
+			atomic.AddInt64(&c.s.successfulReads, 1)
 			return n, err
 		}
-		if c.idle() {
-			return c.finished(io.EOF)
-		}
-		// ignore errors and retry, because clients can reconnect
-		sleepTime := time.Duration(math.Pow(2, i)) * baseIODelay
-		if sleepTime > maxIODelay {
-			sleepTime = maxIODelay
-		}
-		time.Sleep(sleepTime)
-		i++
+
+		// reading failed, but it might succeed in the future if the client reconnects, so don't give up
+		atomic.AddInt64(&c.s.failedReads, 1)
+		c.markFailedOnCurrentConn()
 	}
 }
 
 func (c *client) Write(b bpool.ByteSlice) (int, error) {
-	i := float64(0)
+	i := 0
 	for {
 		conn := c.getFramedConn(c.s.opts.IdleTimeout)
 		if conn == nil {
 			return c.finished(ErrNoConnection)
 		}
-		n, err := conn.WriteAtomic(b)
-		if err == nil {
-			c.markActive()
-			return n, err
-		}
 		if c.idle() {
 			return c.finished(idletiming.ErrIdled)
 		}
-		// ignore errors and retry, because clients can reconnect
-		sleepTime := time.Duration(math.Pow(2, i)) * baseIODelay
-		if sleepTime > maxIODelay {
-			sleepTime = maxIODelay
+
+		if c.isFailedOnCurrentConn() {
+			// wait for client to reconnect before idling
+			i = sleepWithExponentialBackoff(i)
+			continue
 		}
-		time.Sleep(sleepTime)
-		i++
+
+		// we're not failed, let's write
+		i = 0
+
+		n, err := conn.WriteAtomic(b)
+		if err == nil {
+			atomic.AddInt64(&c.s.successfulWrites, 1)
+			c.markActive()
+			return n, err
+		}
+
+		// writing failed, but it might succeed in the future if the client reconnects, so don't give up
+		atomic.AddInt64(&c.s.failedWrites, 1)
+		c.markFailedOnCurrentConn()
 	}
 }
 
 func (c *client) finished(err error) (int, error) {
+	current := c.getFramedConn(0)
+	if current != nil {
+		current.Close()
+	}
 	c.s.forgetClient(c.id)
 	return 0, err
 }
@@ -254,6 +284,29 @@ func (c *client) markActive() {
 	atomic.StoreInt64(&c.lastActive, time.Now().UnixNano())
 }
 
+func (c *client) markFailedOnCurrentConn() {
+	atomic.StoreInt64(&c.failedOnCurrentConn, 1)
+	current := c.getFramedConn(0)
+	if current != nil {
+		current.Close()
+	}
+}
+
+func (c *client) isFailedOnCurrentConn() bool {
+	return atomic.LoadInt64(&c.failedOnCurrentConn) == 1
+}
+
 func (c *client) idle() bool {
 	return time.Duration(time.Now().UnixNano()-atomic.LoadInt64(&c.lastActive)) > c.s.opts.IdleTimeout
+}
+
+func sleepWithExponentialBackoff(i int) int {
+	sleepTime := time.Duration(2 << i * baseIODelay)
+	if sleepTime > maxIODelay {
+		sleepTime = maxIODelay
+	} else {
+		i++
+	}
+	time.Sleep(sleepTime)
+	return i
 }

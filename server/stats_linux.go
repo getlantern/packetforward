@@ -1,6 +1,7 @@
 package server
 
 import (
+	"sync/atomic"
 	"time"
 )
 
@@ -20,6 +21,8 @@ func (s *server) printStats() {
 			numClients := len(s.clients)
 			s.clientsMx.Unlock()
 			log.Debugf("Number of Clients: %d", numClients)
+			log.Debugf("Reads Succeeded: %d   Failed: %d", atomic.LoadInt64(&s.successfulReads), atomic.LoadInt64(&s.failedReads))
+			log.Debugf("Writes Succeeded: %d   Failed: %d", atomic.LoadInt64(&s.successfulWrites), atomic.LoadInt64(&s.failedWrites))
 		}
 	}
 }

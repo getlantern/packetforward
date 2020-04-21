@@ -1,6 +1,6 @@
 module github.com/getlantern/packetforward
 
-go 1.12
+go 1.13
 
 require (
 	github.com/getlantern/errors v0.0.0-20190325191628-abdb3e3e36f7
