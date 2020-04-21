@@ -42,13 +42,13 @@ const (
 )
 
 type server struct {
-	opts             *Opts
-	clients          map[string]*client
-	clientsMx        sync.Mutex
 	successfulReads  int64
 	failedReads      int64
 	successfulWrites int64
 	failedWrites     int64
+	opts             *Opts
+	clients          map[string]*client
+	clientsMx        sync.Mutex
 	close            chan interface{}
 	closed           chan interface{}
 }
@@ -183,11 +183,11 @@ func (s *server) Close() error {
 }
 
 type client struct {
+	failedOnCurrentConn int64
+	lastActive          int64
 	id                  string
 	s                   *server
 	framedConn          eventual.Value
-	failedOnCurrentConn int64
-	lastActive          int64
 	mx                  sync.RWMutex
 }
 
@@ -217,8 +217,8 @@ func (c *client) Read(b bpool.ByteSlice) (int, error) {
 		}
 
 		if c.isFailedOnCurrentConn() {
-			// wait for client to re-connect, with backoff
-			i = sleep(i)
+			// wait for client to reconnect before idling
+			i = sleepWithExponentialBackoff(i)
 			continue
 		}
 
@@ -250,8 +250,8 @@ func (c *client) Write(b bpool.ByteSlice) (int, error) {
 		}
 
 		if c.isFailedOnCurrentConn() {
-			// wait for client to re-connect, with backoff
-			i = sleep(i)
+			// wait for client to reconnect before idling
+			i = sleepWithExponentialBackoff(i)
 			continue
 		}
 
@@ -300,7 +300,7 @@ func (c *client) idle() bool {
 	return time.Duration(time.Now().UnixNano()-atomic.LoadInt64(&c.lastActive)) > c.s.opts.IdleTimeout
 }
 
-func sleep(i int) int {
+func sleepWithExponentialBackoff(i int) int {
 	sleepTime := time.Duration(2 << i * baseIODelay)
 	if sleepTime > maxIODelay {
 		sleepTime = maxIODelay
