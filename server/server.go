@@ -11,6 +11,9 @@ type Opts struct {
 
 	// BufferPoolSize is the size of the buffer pool in bytes. If not specified, defaults to 1 MB
 	BufferPoolSize int
+
+	// ReadBufferSize is the size of the read buffer for reading framed packets from clients. If not specified, defaults to gonat.MaximumIPPacketSize
+	ReadBufferSize int
 }
 
 type Server interface {
