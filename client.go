@@ -43,15 +43,22 @@ type forwarder struct {
 	upstreamConn          net.Conn
 	upstream              io.ReadWriteCloser
 	copyToDownstreamError chan error
+	opts                  *ClientOpts
 }
 
-// Client creates a new packetforward client and returns a WriteCloser. Consumers of packetforward
+// ClientOpts provides options for configuring a client
+type ClientOpts struct {
+	EnableBuffering     bool
+	DisableThreadSafety bool
+}
+
+// ClientWithOpts creates a new packetforward client and returns a WriteCloser. Consumers of packetforward
 // should write whole IP packets to this WriteCloser. The packetforward client will write response
 // packets to the specified downstream Writer. idleTimeout specifies a timeout for idle clients.
 // When the client to server connection remains idle for longer than idleTimeout, it is automatically
 // closed. dialServer configures how to connect to the packetforward server. When packetforwarding is
 // no longer needed, consumers should Close the returned WriteCloser to clean up any outstanding resources.
-func Client(downstream io.Writer, idleTimeout time.Duration, dialServer DialFunc) io.WriteCloser {
+func ClientWithOpts(downstream io.Writer, idleTimeout time.Duration, dialServer DialFunc, opts *ClientOpts) io.WriteCloser {
 	id := uuid.New().String()
 	return &forwarder{
 		id:                    id,
@@ -59,7 +66,16 @@ func Client(downstream io.Writer, idleTimeout time.Duration, dialServer DialFunc
 		idleTimeout:           idleTimeout,
 		dialServer:            dialServer,
 		copyToDownstreamError: make(chan error, 1),
+		opts:                  opts,
 	}
+}
+
+// Client is like ClientWithOpts, defaulting EnableBuffering and DisableThreadSafety to true
+func Client(downstream io.Writer, idleTimeout time.Duration, dialServer DialFunc) io.WriteCloser {
+	return ClientWithOpts(downstream, idleTimeout, dialServer, &ClientOpts{
+		EnableBuffering:     true,
+		DisableThreadSafety: true,
+	})
 }
 
 func (f *forwarder) Write(b []byte) (int, error) {
@@ -123,8 +139,12 @@ func (f *forwarder) dialUpstream() error {
 	upstreamConn = idletiming.Conn(upstreamConn, f.idleTimeout, nil)
 	rwc := framed.NewReadWriteCloser(upstreamConn)
 	rwc.EnableBigFrames()
-	rwc.EnableBuffering(gonat.MaximumIPPacketSize)
-	rwc.DisableThreadSafety()
+	if f.opts.EnableBuffering {
+		rwc.EnableBuffering(gonat.MaximumIPPacketSize)
+	}
+	if f.opts.DisableThreadSafety {
+		rwc.DisableThreadSafety()
+	}
 	upstream := rwc
 	if _, err := upstream.Write([]byte(f.id)); err != nil {
 		return errors.New("Error sending client ID to upstream, will retry: %v", err)
